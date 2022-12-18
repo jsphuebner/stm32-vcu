@@ -28,7 +28,7 @@ class IOMatrix
       enum pinfuncs
       {
          NONE, CHADEMOALLOW, OBCENABLE, HEATERENABLE, RUNINDICATION, WARNINDICATION,
-         COOLANTPUMP, NEGCONTACTOR, BRAKELIGHT, REVERSELIGHT, MOTORSPEED, VEHICLESPEED,
+         COOLANTPUMP, NEGCONTACTOR, BRAKELIGHT, REVERSELIGHT,
          LAST
       };
 
@@ -37,7 +37,7 @@ class IOMatrix
 
    private:
       static DigIo* functionToPin[LAST];
-      static const int numPins = 5;
+      static const int numPins = 8;
       static DigIo* const paramToPin[numPins];
 };
 

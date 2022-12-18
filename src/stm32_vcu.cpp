@@ -236,10 +236,6 @@ static void Ms200Task(void)
 
 
       if(!RunChg) chargeMode = false;
-
-      //if(RunChg) DigIo::PWM3.Set();//enable charger digital line.
-      //if(!RunChg) DigIo::PWM3.Clear();//disable charger digital line when requested by timer or webui.
-
    }
 
    ///////////////////////////////////////
@@ -287,14 +283,14 @@ static void Ms100Task(void)
    Param::SetInt(Param::anain1, AnaIn::GP_analog1.Get());
    Param::SetInt(Param::anain2, AnaIn::GP_analog2.Get());
 
-/*    if(opmode==MOD_RUN)
-    {
-       DigIo::PWM2.Set();//Enable run mode digital line to high.
-    }
-     else
-     {
-        DigIo::PWM2.Clear();
-     }*/
+   if (Param::GetInt(Param::dir) < 0)
+   {
+      IOMatrix::GetPin(IOMatrix::REVERSELIGHT)->Set();
+   }
+   else
+   {
+      IOMatrix::GetPin(IOMatrix::REVERSELIGHT)->Clear();
+   }
 
    // Leaf Gen2 PDM Charger/DCDC/Chademo
    if(targetChgint == ChargeInterfaces::Leaf_PDM &&
@@ -806,7 +802,7 @@ extern "C" int main(void)
    FunctionPointerCallback canCb(CanCallback, SetCanFilters);
    Stm32Can c(CAN1, CanHardware::Baud500);
    Stm32Can c2(CAN2, CanHardware::Baud500, true);
-   CanMap cm(&c);
+   CanMap cm(&c2);
 
    // Set up CAN 1 callback and messages to listen for
    c.AddReceiveCallback(&canCb);
@@ -832,7 +828,7 @@ extern "C" int main(void)
    s.AddTask(Ms100Task, 100);
    s.AddTask(Ms200Task, 200);
 
-   if(Param::GetInt(Param::ISA_INIT)==1) ISA::initialize(shunt_can);//only call this once if a new sensor is fitted.
+   if(Param::GetInt(Param::IsaInit)==1) ISA::initialize(shunt_can);//only call this once if a new sensor is fitted.
 
    Param::SetInt(Param::version, 4); //backward compatibility
 
