@@ -49,6 +49,11 @@
 
 #include "brogenCharger.h"
 
+#define CURR_OFFSET_A   700.0f   // BMS_ChgCurrReq physical offset (A)
+#define CURR_FACTOR     0.1f     // BMS_ChgCurrReq scale factor (A/raw LSB)
+#define CURR_RAW_MAX    7000u    // raw value for 0 A demand
+#define TEMP_OFFSET_C   40       // temperature signal offset (°C)
+
 uint8_t brogenCharger::obcStatus;
 uint8_t brogenCharger::obcWorkMode;
 float   brogenCharger::dcVoltage;
@@ -139,24 +144,25 @@ void brogenCharger::Task100Ms()
    uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
    // Voltage setpoint (0.1 V / bit, 13-bit)
-   uint16_t voltRaw = (uint16_t)(Param::GetFloat(Param::Voltspnt) * 10.0f);
+   float voltF = Param::GetFloat(Param::Voltspnt);
+   uint16_t voltRaw = (uint16_t)(voltF * 10.0f);
    if (voltRaw > 0x1FFF)
       voltRaw = 0x1FFF;
 
    // Current request derived from power setpoint.
-   // physical (A) = raw * 0.1 − 700  →  raw = (700 − I_A) * 10
+   // physical (A) = raw * CURR_FACTOR − CURR_OFFSET_A
+   //  → raw = (CURR_OFFSET_A − I_A) / CURR_FACTOR
    // I_A is the positive charging current the VCU wants to draw.
-   float voltF = Param::GetFloat(Param::Voltspnt);
    if (voltF < 1.0f)
       voltF = 1.0f;
    float iReq = Param::GetFloat(Param::Pwrspnt) / voltF;
    if (iReq < 0.0f)
       iReq = 0.0f;
-   if (iReq > 700.0f)
-      iReq = 700.0f;
-   uint16_t currRaw = (uint16_t)((700.0f - iReq) * 10.0f);
-   if (currRaw > 7000)
-      currRaw = 7000;
+   if (iReq > CURR_OFFSET_A)
+      iReq = CURR_OFFSET_A;
+   uint16_t currRaw = (uint16_t)((CURR_OFFSET_A - iReq) / CURR_FACTOR);
+   if (currRaw > CURR_RAW_MAX)
+      currRaw = CURR_RAW_MAX;
 
    uint8_t onChrgCmd = clearToStart ? 1 : 0;
 
@@ -228,10 +234,10 @@ void brogenCharger::handle2E1(uint32_t data[2])
 void brogenCharger::handle2E2(uint32_t data[2])
 {
    uint8_t *bytes = (uint8_t *)data;
-   tempAir = (int8_t)bytes[0] - 40;
-   tempM1  = (int8_t)bytes[1] - 40;
-   tempPFC = (int8_t)bytes[2] - 40;
-   tempLLC = (int8_t)bytes[3] - 40;
+   tempAir = (int8_t)bytes[0] - TEMP_OFFSET_C;
+   tempM1  = (int8_t)bytes[1] - TEMP_OFFSET_C;
+   tempPFC = (int8_t)bytes[2] - TEMP_OFFSET_C;
+   tempLLC = (int8_t)bytes[3] - TEMP_OFFSET_C;
 
    float maxTemp = tempM1;
    if (tempPFC > maxTemp) maxTemp = tempPFC;
