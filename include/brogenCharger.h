@@ -60,14 +60,14 @@ private:
    static float    dcCurrent;
    static float    acVoltage;
    static float    acCurrent;
-   static float    tempAir;
+   static float    tempWater;
    static float    tempM1;
    static float    tempPFC;
    static float    tempLLC;
 
    static uint8_t  crc8(uint8_t *data, uint8_t len);
    static void     handle2E1(uint32_t data[2]);
-   static void     handle2E2(uint32_t data[2]);
+   static void     handle2B2(uint32_t data[2]);
    static void     handle2E6(uint32_t data[2]);
    static void     handle2EB(uint32_t data[2]);
    static void     handle2ED(uint32_t data[2]);

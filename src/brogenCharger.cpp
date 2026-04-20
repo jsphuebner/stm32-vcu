@@ -41,7 +41,7 @@
  *
  * Receive messages decoded:
  *   0x2E1 – CP status, e-lock, max DC power
- *   0x2E2 – temperatures
+ *   0x2B2 – temperatures (DCDC_2B2: TempM1/Water/PFC/LLC)
  *   0x2E6 – actual DC voltage and current, max DC voltage and current
  *   0x2EB – OBC status, work mode, AC voltage and current
  *   0x2ED – fault flags (logged, not acted on)
@@ -60,7 +60,7 @@ float   brogenCharger::dcVoltage;
 float   brogenCharger::dcCurrent;
 float   brogenCharger::acVoltage;
 float   brogenCharger::acCurrent;
-float   brogenCharger::tempAir;
+float   brogenCharger::tempWater;
 float   brogenCharger::tempM1;
 float   brogenCharger::tempPFC;
 float   brogenCharger::tempLLC;
@@ -126,7 +126,7 @@ void brogenCharger::SetCanInterface(CanHardware *c)
 {
    can = c;
    can->RegisterUserMessage(0x2E1);
-   can->RegisterUserMessage(0x2E2);
+   can->RegisterUserMessage(0x2B2);
    can->RegisterUserMessage(0x2E6);
    can->RegisterUserMessage(0x2EB);
    can->RegisterUserMessage(0x2ED);
@@ -200,8 +200,8 @@ void brogenCharger::DecodeCAN(int id, uint32_t data[2])
    case 0x2E1:
       handle2E1(data);
       break;
-   case 0x2E2:
-      handle2E2(data);
+   case 0x2B2:
+      handle2B2(data);
       break;
    case 0x2E6:
       handle2E6(data);
@@ -225,23 +225,25 @@ void brogenCharger::handle2E1(uint32_t data[2])
 }
 
 // ---------------------------------------------------------------------------
-// handle2E2 – OBC_2E2: temperatures (all byte-aligned, offset -40 °C)
-//   Byte 0: OBC_AirTemp
-//   Byte 1: OBC_M1Temp
-//   Byte 2: OBC_PFCTemp
-//   Byte 3: OBC_LLCTemp
+// handle2B2 – DCDC_2B2: temperatures (all byte-aligned, offset -40 °C)
+//   Byte 0: DCDC_TempM1   (start=0)
+//   Byte 1: (unused gap)
+//   Byte 2: DCDC_TempWater (start=16)
+//   Byte 3: DCDC_TempPFC   (start=24)
+//   Byte 4: DCDC_TempLLC   (start=32)
 // ---------------------------------------------------------------------------
-void brogenCharger::handle2E2(uint32_t data[2])
+void brogenCharger::handle2B2(uint32_t data[2])
 {
    uint8_t *bytes = (uint8_t *)data;
-   tempAir = (int8_t)bytes[0] - TEMP_OFFSET_C;
-   tempM1  = (int8_t)bytes[1] - TEMP_OFFSET_C;
-   tempPFC = (int8_t)bytes[2] - TEMP_OFFSET_C;
-   tempLLC = (int8_t)bytes[3] - TEMP_OFFSET_C;
+   tempWater = (int8_t)bytes[2] - TEMP_OFFSET_C;
+   tempM1    = (int8_t)bytes[0] - TEMP_OFFSET_C;
+   tempPFC   = (int8_t)bytes[3] - TEMP_OFFSET_C;
+   tempLLC   = (int8_t)bytes[4] - TEMP_OFFSET_C;
 
    float maxTemp = tempM1;
-   if (tempPFC > maxTemp) maxTemp = tempPFC;
-   if (tempLLC > maxTemp) maxTemp = tempLLC;
+   if (tempWater > maxTemp) maxTemp = tempWater;
+   if (tempPFC   > maxTemp) maxTemp = tempPFC;
+   if (tempLLC   > maxTemp) maxTemp = tempLLC;
    Param::SetFloat(Param::ChgTemp, maxTemp);
 }
 
