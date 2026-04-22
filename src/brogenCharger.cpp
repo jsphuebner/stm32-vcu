@@ -21,11 +21,12 @@
  *
  * Transmit message BMS_2C7 (0x2C7, 100 ms, DLC=8):
  *
- * All multi-byte signals use Motorola byte order (big-endian).
- * "start bit" is the position of the LSB using the DBC convention where
- * bit N = byte (N/8), bit (N%8)  with bit 0 = LSB of byte 0.
+ * All multi-byte signals use Motorola LSB byte order: start bit = LSB
+ * position using DBC bit numbering (bit N = byte N/8, bit N%8).
+ * Within each byte bits increase normally; at a byte boundary the signal
+ * continues in the next-lower byte (big-endian across bytes).
  *
- * Signal layout:
+ * BMS_2C7 signal layout:
  *   Byte 0 : bit 7 = BMS_OnChrgCmd (1 = charge on)
  *   Byte 1 : bits [4:0] = BMS_MaxChgVolt[12:8]
  *   Byte 2 : BMS_MaxChgVolt[7:0]          (factor 0.1 V, range 0–500 V)
@@ -133,62 +134,363 @@ void brogenCharger::SetCanInterface(CanHardware *c)
 }
 
 // ---------------------------------------------------------------------------
-// Task100Ms – build and transmit BMS_2C7
+// Task10Ms – transmit 10 ms messages (BMS_09D, VCU_2A3) and 20 ms messages
+//            (VCU_11F, BCM_17D every second call)
+// ---------------------------------------------------------------------------
+void brogenCharger::Task10Ms()
+{
+   sendBMS09D();
+   sendVCU2A3();
+
+   if (++counter20ms >= 2) {
+      counter20ms = 0;
+      sendVCU11F();
+      sendBCM17D();
+   }
+}
+
+// ---------------------------------------------------------------------------
+// Task100Ms – transmit BMS_2C7 (charge mode only) plus all 100 ms and
+//             500 ms keepalive messages
 // ---------------------------------------------------------------------------
 void brogenCharger::Task100Ms()
 {
    int opmode = Param::GetInt(Param::opmode);
-   if (opmode != MOD_CHARGE)
-      return;
 
+   // BMS_2C7: charge command – only when actively charging
+   if (opmode == MOD_CHARGE) {
+      uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+      // Voltage setpoint (0.1 V / bit, 13-bit)
+      float voltF = Param::GetFloat(Param::Voltspnt);
+      uint16_t voltRaw = (uint16_t)(voltF * 10.0f);
+      if (voltRaw > 0x1FFF)
+         voltRaw = 0x1FFF;
+
+      // Current request derived from power setpoint.
+      // physical (A) = raw * CURR_FACTOR − CURR_OFFSET_A
+      //  → raw = (CURR_OFFSET_A − I_A) / CURR_FACTOR
+      // I_A is the positive charging current the VCU wants to draw.
+      if (voltF < 1.0f)
+         voltF = 1.0f;
+      float iReq = Param::GetFloat(Param::Pwrspnt) / voltF;
+      if (iReq < 0.0f)
+         iReq = 0.0f;
+      if (iReq > CURR_OFFSET_A)
+         iReq = CURR_OFFSET_A;
+      uint16_t currRaw = (uint16_t)((CURR_OFFSET_A - iReq) / CURR_FACTOR);
+      if (currRaw > CURR_RAW_MAX)
+         currRaw = CURR_RAW_MAX;
+
+      uint8_t onChrgCmd = clearToStart ? 1 : 0;
+
+      // Byte 0: OnChrgCmd at bit 7
+      bytes[0] = (uint8_t)(onChrgCmd << 7);
+
+      // Bytes 1-2: MaxChgVolt (same as ChargeVoltage for this implementation)
+      bytes[1] = (uint8_t)(voltRaw >> 8) & 0x1F;
+      bytes[2] = (uint8_t)(voltRaw & 0xFF);
+
+      // Bytes 3-4 upper: ChargeVoltage
+      bytes[3] = (uint8_t)(voltRaw >> 5);
+      bytes[4] = (uint8_t)((voltRaw & 0x1F) << 3);
+
+      // Bytes 4 lower - 6 upper: ChgCurrReq
+      bytes[4] |= (uint8_t)((currRaw >> 10) & 0x07);
+      bytes[5]  = (uint8_t)((currRaw >> 2) & 0xFF);
+      bytes[6]  = (uint8_t)(((currRaw & 0x03) << 6) |
+                            (onChrgCmd << 5) |         // ObcReadyReq = OnChrgCmd
+                            (rollingCounter & 0x0F));
+
+      bytes[7] = crc8(bytes, 7);
+
+      can->Send(0x2C7, (uint32_t *)bytes, 8);
+
+      rollingCounter = (rollingCounter + 1) & 0x0F;
+   }
+
+   // 100 ms keepalive messages (sent regardless of opmode)
+   sendBMS2CA();
+   sendBMS2CE();
+   sendVCU2A5();
+   sendVCU2A7();
+   sendGW2AD();
+   sendGW2DF();
+
+   // 500 ms messages (every 5th 100 ms call)
+   if (++counter500ms >= 5) {
+      counter500ms = 0;
+      sendIVI195();
+      sendIVI37F();
+      sendTBOX28D();
+   }
+}
+
+// ---------------------------------------------------------------------------
+// Task200Ms – transmit 1000 ms messages (GW_3AA, NM frames every 5th call)
+// ---------------------------------------------------------------------------
+void brogenCharger::Task200Ms()
+{
+   if (++counter1000ms >= 5) {
+      counter1000ms = 0;
+      sendGW3AA();
+      sendNMMessages();
+   }
+}
+
+// ---------------------------------------------------------------------------
+// sendBMS09D – BMS_09D: HV connection status + pack voltage (10 ms)
+//
+// Signal layout (Motorola LSB):
+//   Byte 0[7:6]: BMS_HVConnectStt (0=Disconnect, 1=Connecting)
+//   Byte 2[7:0]: BMS_PackVoltage[12:5]  (factor=0.1 V)
+//   Byte 3[7:3]: BMS_PackVoltage[4:0]
+// ---------------------------------------------------------------------------
+void brogenCharger::sendBMS09D()
+{
    uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
-   // Voltage setpoint (0.1 V / bit, 13-bit)
-   float voltF = Param::GetFloat(Param::Voltspnt);
-   uint16_t voltRaw = (uint16_t)(voltF * 10.0f);
-   if (voltRaw > 0x1FFF)
-      voltRaw = 0x1FFF;
+   int opmode = Param::GetInt(Param::opmode);
+   uint8_t hvConnStt = (opmode == MOD_CHARGE) ? 1 : 0;
+   bytes[0] = (uint8_t)((hvConnStt & 0x03) << 6);
 
-   // Current request derived from power setpoint.
-   // physical (A) = raw * CURR_FACTOR − CURR_OFFSET_A
-   //  → raw = (CURR_OFFSET_A − I_A) / CURR_FACTOR
-   // I_A is the positive charging current the VCU wants to draw.
-   if (voltF < 1.0f)
-      voltF = 1.0f;
-   float iReq = Param::GetFloat(Param::Pwrspnt) / voltF;
-   if (iReq < 0.0f)
-      iReq = 0.0f;
-   if (iReq > CURR_OFFSET_A)
-      iReq = CURR_OFFSET_A;
-   uint16_t currRaw = (uint16_t)((CURR_OFFSET_A - iReq) / CURR_FACTOR);
-   if (currRaw > CURR_RAW_MAX)
-      currRaw = CURR_RAW_MAX;
+   float udc = Param::GetFloat(Param::udc);
+   uint16_t voltRaw = (uint16_t)(udc * 10.0f);
+   if (voltRaw > 0x1FFF) voltRaw = 0x1FFF;
+   bytes[2] = (uint8_t)(voltRaw >> 5);
+   bytes[3] = (uint8_t)((voltRaw & 0x1F) << 3);
 
-   uint8_t onChrgCmd = clearToStart ? 1 : 0;
+   can->Send(0x09D, (uint32_t *)bytes, 8);
+}
 
-   // Byte 0: OnChrgCmd at bit 7
-   bytes[0] = (uint8_t)(onChrgCmd << 7);
+// ---------------------------------------------------------------------------
+// sendVCU2A3 – VCU_2A3: charge load power, thermal permit,
+//              OBC discharge permit (10 ms)
+//
+// Signal layout (Motorola LSB):
+//   Byte 0[7:0]: VCU_ChargeLoadPower     (factor=0.1, sent as 0)
+//   Byte 1[2:1]: VCU_BMSPreThemalPermit  (0=Default)
+//   Byte 5[7:0]: VCU_OBCDischgPermitPower (factor=0.1, sent as 0)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendVCU2A3()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   can->Send(0x2A3, (uint32_t *)bytes, 8);
+}
 
-   // Bytes 1-2: MaxChgVolt (same as ChargeVoltage for this implementation)
-   bytes[1] = (uint8_t)(voltRaw >> 8) & 0x1F;
-   bytes[2] = (uint8_t)(voltRaw & 0xFF);
+// ---------------------------------------------------------------------------
+// sendVCU11F – VCU_11F: DCDC control (20 ms, rolling counter + CRC8)
+//
+// Signal layout (Motorola LSB):
+//   Byte 1[6:0]: VCU_DC_IdcHvMaxSetP[10:4] (factor=0.0625, offset=−64 A)
+//   Byte 2[7:4]: VCU_DC_IdcHvMaxSetP[3:0]
+//   Byte 2[3:0]: VCU_DC_IdcLvMaxSetP[10:7] (factor=1,      offset=−1023 A)
+//   Byte 3[7:1]: VCU_DC_IdcLvMaxSetP[6:0]
+//   Byte 3[0]:   VCU_DC_UdcLvSetP[8]        (factor=0.125 V)
+//   Byte 4[7:0]: VCU_DC_UdcLvSetP[7:0]
+//   Byte 5[7:5]: VCU_DC_stModereq           (0=Standby)
+//   Byte 6[3:0]: VCU_RollingCounter_11F
+//   Byte 7[7:0]: VCU_Checksum_11F           (CRC8 over bytes 0–6)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendVCU11F()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
-   // Bytes 3-4 upper: ChargeVoltage
-   bytes[3] = (uint8_t)(voltRaw >> 5);
-   bytes[4] = (uint8_t)((voltRaw & 0x1F) << 3);
+   // IdcHvMaxSetP: raw=2047 → 63.9375 A (no HV current limit imposed)
+   const uint16_t idcHvRaw = 2047;
+   bytes[1]  = (uint8_t)((idcHvRaw >> 4) & 0x7F);   // raw[10:4] → byte1[6:0]
+   bytes[2]  = (uint8_t)((idcHvRaw & 0x0F) << 4);   // raw[3:0]  → byte2[7:4]
 
-   // Bytes 4 lower - 6 upper: ChgCurrReq
-   bytes[4] |= (uint8_t)((currRaw >> 10) & 0x07);
-   bytes[5]  = (uint8_t)((currRaw >> 2) & 0xFF);
-   bytes[6]  = (uint8_t)(((currRaw & 0x03) << 6) |
-                         (onChrgCmd << 5) |         // ObcReadyReq = OnChrgCmd
-                         (rollingCounter & 0x0F));
+   // IdcLvMaxSetP: raw=1023 → 0 A (LV current = 0, Standby)
+   const uint16_t idcLvRaw = 1023;
+   bytes[2] |= (uint8_t)((idcLvRaw >> 7) & 0x0F);   // raw[10:7] → byte2[3:0]
+   bytes[3]  = (uint8_t)((idcLvRaw & 0x7F) << 1);   // raw[6:0]  → byte3[7:1]
 
+   // UdcLvSetP: 14 V → raw = 14 / 0.125 = 112
+   const uint16_t udcLvRaw = 112;
+   bytes[3] |= (uint8_t)((udcLvRaw >> 8) & 0x01);   // raw[8]    → byte3[0]
+   bytes[4]  = (uint8_t)(udcLvRaw & 0xFF);           // raw[7:0]  → byte4
+
+   // stModereq: 0 = Standby (bytes[5] bits[7:5] already 0)
+
+   bytes[6] = rollingCounter11F & 0x0F;
    bytes[7] = crc8(bytes, 7);
 
-   can->Send(0x2C7, (uint32_t *)bytes, 8);
+   can->Send(0x11F, (uint32_t *)bytes, 8);
+   rollingCounter11F = (rollingCounter11F + 1) & 0x0F;
+}
 
-   rollingCounter = (rollingCounter + 1) & 0x0F;
+// ---------------------------------------------------------------------------
+// sendBCM17D – BCM_17D: power distribution status, e-lock request (20 ms)
+//
+// Signal layout (Motorola LSB):
+//   Byte 0[2:0]: BCM_PwrDistributionSts (2=ACC)
+//   Byte 2[2]:   BCM_Elock_open_Req     (0=no request)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendBCM17D()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   bytes[0] = 2;  // ACC
+   can->Send(0x17D, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendBMS2CA – BMS_2CA: e-lock request (100 ms)
+//
+//   Byte 6[7:6]: BMS_ElockRequest (0=no request)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendBMS2CA()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   can->Send(0x2CA, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendBMS2CE – BMS_2CE: battery-full flag, DC charge connection (100 ms)
+//
+//   Byte 3[2]:   BMS_Batt_Full      (0=not full)
+//   Byte 7[1:0]: BMS_DCChgConnectSt (0=disconnect)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendBMS2CE()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   can->Send(0x2CE, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendVCU2A5 – VCU_2A5: electric mode flag (100 ms)
+//
+//   Byte 0[4:2]: VCU_ElecModFlg (3=Vehicle ready while charging, 1=LV on)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendVCU2A5()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   int opmode = Param::GetInt(Param::opmode);
+   uint8_t modFlg = (opmode == MOD_CHARGE) ? 3 : 1;
+   bytes[0] = (uint8_t)((modFlg & 0x07) << 2);
+   can->Send(0x2A5, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendVCU2A7 – VCU_2A7: fault level, AGS position, drive pump duty (100 ms)
+//
+//   Byte 0[7:5]: VCU_FaultLvl       (0=no fault)
+//   Byte 4[7:0]: VCU_AGSActPosition (0 %)
+//   Byte 6[7:4]: VCU_DrvPumpDC      (0 %)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendVCU2A7()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   can->Send(0x2A7, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendGW2AD – GW_2AD: vehicle speed (100 ms)
+//
+//   Byte 0[7:0]: ESP_VehicleSpeed[12:5]  (0 km/h)
+//   Byte 1[7:3]: ESP_VehicleSpeed[4:0]   (0 km/h)
+//   Byte 1[1]:   ESP_VehicleSpeedValid   (1=valid)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendGW2AD()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   bytes[1] = 0x02;  // VehicleSpeedValid=1, speed bits=0
+   can->Send(0x2AD, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendGW2DF – GW_2DF: odometer (100 ms)
+//
+//   Bytes 0–2: IP_TotalOdometer (0 km, 24-bit big-endian)
+//   Byte 5[7]: IP_OdometerSts   (1=valid)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendGW2DF()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   bytes[5] = 0x80;  // OdometerSts=1
+   can->Send(0x2DF, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendIVI195 – IVI_195: infotainment e-lock request (500 ms)
+//
+//   Byte 1[5:4]: IVI_Elock_open_Req (0=no request)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendIVI195()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   can->Send(0x195, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendIVI37F – IVI_37F: date/time (500 ms)
+//
+//   Byte 0[5:0]: IVI_YearSet    (offset 2018; 6 = year 2024)
+//   Byte 1[3:0]: IVI_MonthSet   (1 = January)
+//   Byte 2[4:0]: IVI_DaySet     (1 = 1st)
+//   Byte 3[4:0]: IVI_HourSet    (0)
+//   Byte 4[5:0]: IVI_MinuteSet  (0)
+//   Byte 5[5:0]: IVI_SecondSet  (0)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendIVI37F()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   bytes[0] = 6;  // 2024 − 2018 = 6
+   bytes[1] = 1;  // January
+   bytes[2] = 1;  // 1st
+   can->Send(0x37F, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendTBOX28D – TBOX_28D: telematics OTA mode request (500 ms, all zeros)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendTBOX28D()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+   can->Send(0x28D, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendGW3AA – GW_3AA: VIN (1000 ms)
+//
+//   Bytes 0–6: GW_VIN_Value_1–7 (sent as 0x00)
+//   Byte 7:    GW_VINFrameNumber (1)
+// ---------------------------------------------------------------------------
+void brogenCharger::sendGW3AA()
+{
+   uint8_t bytes[8] = {0, 0, 0, 0, 0, 0, 0, 1};
+   can->Send(0x3AA, (uint32_t *)bytes, 8);
+}
+
+// ---------------------------------------------------------------------------
+// sendNMMessages – Network Management frames (1000 ms)
+//
+// Minimal AUTOSAR-NM payload:
+//   Byte 0:    SourceID
+//   Byte 2[5]: NormalFromReady = 1
+//   Byte 3[4:0]: WakeSource
+// ---------------------------------------------------------------------------
+void brogenCharger::sendNMMessages()
+{
+   // BMS_402
+   uint8_t bms402[8] = {0x01, 0, 0x20, 0x01, 0, 0, 0, 0};
+   can->Send(0x402, (uint32_t *)bms402, 8);
+
+   // VCU_405 (Charge wakeup = 0x04)
+   uint8_t vcu405[8] = {0x05, 0, 0x20, 0x04, 0, 0, 0, 0};
+   can->Send(0x405, (uint32_t *)vcu405, 8);
+
+   // GW_400 (WakeSource_CAN = 0x02 = PT CAN, byte 7[2:0])
+   uint8_t gw400[8] = {0x00, 0, 0x20, 0x01, 0, 0, 0, 0x02};
+   can->Send(0x400, (uint32_t *)gw400, 8);
+
+   // MCU_401
+   uint8_t mcu401[8] = {0x02, 0, 0x20, 0x01, 0, 0, 0, 0};
+   can->Send(0x401, (uint32_t *)mcu401, 8);
+
+   // EGS_404
+   uint8_t egs404[8] = {0x04, 0, 0x20, 0x01, 0, 0, 0, 0};
+   can->Send(0x404, (uint32_t *)egs404, 8);
 }
 
 // ---------------------------------------------------------------------------
