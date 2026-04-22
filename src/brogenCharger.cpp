@@ -176,6 +176,9 @@ void brogenCharger::Task100Ms()
       float iReq = Param::GetFloat(Param::Pwrspnt) / voltF;
       if (iReq < 0.0f)
          iReq = 0.0f;
+      float bmsLim = Param::GetFloat(Param::BMS_ChargeLim);
+      if (iReq > bmsLim)
+         iReq = bmsLim;
       if (iReq > CURR_OFFSET_A)
          iReq = CURR_OFFSET_A;
       uint16_t currRaw = (uint16_t)((CURR_OFFSET_A - iReq) / CURR_FACTOR);
