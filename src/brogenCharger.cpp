@@ -306,8 +306,9 @@ void brogenCharger::sendVCU11F()
    bytes[2] |= (uint8_t)((idcLvRaw >> 7) & 0x0F);   // raw[10:7] → byte2[3:0]
    bytes[3]  = (uint8_t)((idcLvRaw & 0x7F) << 1);   // raw[6:0]  → byte3[7:1]
 
-   // UdcLvSetP: 14 V → raw = 14 / 0.125 = 112
-   const uint16_t udcLvRaw = 112;
+   // UdcLvSetP: factor=0.125 V/bit, 9-bit value → raw = DCSetPnt / 0.125
+   uint16_t udcLvRaw = (uint16_t)(Param::GetFloat(Param::DCSetPnt) / 0.125f);
+   if (udcLvRaw > 0x1FF) udcLvRaw = 0x1FF;
    bytes[3] |= (uint8_t)((udcLvRaw >> 8) & 0x01);   // raw[8]    → byte3[0]
    bytes[4]  = (uint8_t)(udcLvRaw & 0xFF);           // raw[7:0]  → byte4
 
