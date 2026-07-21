@@ -41,10 +41,12 @@
 #include "MGCoolantHeater.h"
 #include "MGgen2V2Lcharger.h"
 #include "brogenCharger.h"
+#include "Maintainer12V.h"
 #include "NissanPDM.h"
 #include "OutlanderCanHeater.h"
 #include "OutlanderCompressor.h"
 #include "OutlanderHeartBeat.h"
+#include "PKP2300_Lever.h"
 #include "PWMHeater.h"
 #include "TeslaDCDC.h"
 #include "VWAirHeater.h"
@@ -89,7 +91,6 @@
 #include "preheater.h"
 #include "printf.h"
 #include "rearoutlanderinverter.h"
-#include "sdocommands.h"
 #include "shifter.h"
 #include "simpbms.h"
 #include "stm32_can.h"
@@ -184,6 +185,7 @@ static F30_Lever F30GearLever;
 static E65_Lever E65GearLever;
 static JLR_G1 JLRG1shift;
 static JLR_G2 JLRG2shift;
+static PKP2300_Lever PKP2300GearPanel;
 static vwCoolantHeater heaterCoolantVW;
 static mgCoolantHeater heaterCoolantMG;
 static vwAirHeater heaterAirVW;
@@ -213,6 +215,7 @@ static Preheater preheater;
 static OutlanderCompressor outlanderCompressor;
 static Compressor *selectedCompressor = &UnUsed;
 static PWMHeater pwmHeater;
+static Maintainer12V maintainer12V;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void) {
@@ -374,6 +377,7 @@ static void Ms200Task(void) {
     IOMatrix::GetPin(IOMatrix::BRAKEVACPUMP)->Clear();
   }
 
+  maintainer12V.Task200Ms(opmode);
   preheater.Task200Ms(opmode, hours, minutes);
 }
 
@@ -710,6 +714,7 @@ static void Ms10Task(void) {
     initbyStart = false;
     initbyCharge = false;
     preheater.SetInitByPreHeat(false);
+    maintainer12V.SetInitByMaintainer(false);
 
     DigIo::inv_out.Clear();                           // inverter power off
     IOMatrix::GetPin(IOMatrix::COOLANTPUMP)->Clear(); // Coolant pump off if
@@ -757,6 +762,12 @@ static void Ms10Task(void) {
       vehicleStartTime = rtc_get_counter_val();
       preheater.SetInitByPreHeat(true);
     }
+    if (maintainer12V.GetRunMaintainer()) {
+      opmode = MOD_PRECHARGE; // proceed to precharge if charge requested.
+      rlyDly = 25;            // Recharge sequence timer
+      vehicleStartTime = rtc_get_counter_val();
+      maintainer12V.SetInitByMaintainer(true);
+    }
     Param::SetInt(Param::opmode, opmode);
     break;
 
@@ -798,6 +809,12 @@ static void Ms10Task(void) {
         opmode = MOD_PREHEAT;
         rlyDly = 25;                         // Recharge sequence timer
         Param::SetInt(Param::TorqDerate, 0); // clear torque derate reason
+      } else if (maintainer12V.GetRunMaintainer()) {
+        opmode = MOD_MAINTAIN;
+        rlyDly = 25;                         // Recharge sequence timer
+        Param::SetInt(Param::TorqDerate, 0); // clear torque derate reason
+        Param::SetInt(Param::maintainWakeups,
+                      Param::GetInt(Param::maintainWakeups) + 1);
       }
     }
     if (initbyCharge && !chargeMode)
@@ -806,6 +823,9 @@ static void Ms10Task(void) {
     if (initbyStart && !selectedVehicle->Ready())
       opmode = MOD_OFF;
     if (preheater.GetInitByPreHeat() && !preheater.GetRunPreHeat())
+      opmode = MOD_OFF;
+    if (maintainer12V.GetInitByMaintainer() &&
+        !maintainer12V.GetRunMaintainer())
       opmode = MOD_OFF;
 
     if (udc < (Param::GetInt(Param::udcsw)) &&
@@ -860,6 +880,26 @@ static void Ms10Task(void) {
       rlyDly = 250; // Recharge sequence timer for delayed shutdown
     }
     Param::SetInt(Param::opmode, opmode);
+    break;
+
+  case MOD_MAINTAIN:
+    if (rlyDly != 0)
+      rlyDly--; // here we are going to pause before energising precharge to
+                // prevent too many contactors pulling amps at the same time
+    if (rlyDly == 0) {
+      DigIo::dcsw_out.Set();
+    }
+
+    maintainer12V.Ms10Task();
+
+    if (!maintainer12V.GetRunMaintainer()) {
+      rlyDly = 250; // Recharge sequence timer for delayed shutdown
+    }
+
+    if ((selectedVehicle->Start() && selectedVehicle->Ready())) {
+      maintainer12V.CancelMaintainer();
+    }
+
     break;
 
   case MOD_PREHEAT:
@@ -1175,6 +1215,10 @@ static void UpdateShifter() {
     selectedShifter = &E65GearLever;
     break;
 
+  case ShifterModes::PKP2300:
+    selectedShifter = &PKP2300GearPanel;
+    break;
+
   default:
     // Default to no shifter
     selectedShifter = &shifterNone;
@@ -1284,12 +1328,9 @@ void Param::Change(Param::PARAM_NUM paramNum) {
     break;
   }
 
-  if (Param::GetInt(Param::reversemotor) != 0) {
-    if (Param::GetInt(Param::Inverter) == InvModes::RearOutlander) {
-
-    } else {
-      Param::SetInt(Param::reversemotor, 0);
-    }
+  if (Param::GetInt(Param::reversemotor) != 0 &&
+      !selectedInverter->SupportsReverseMotor()) {
+    Param::SetInt(Param::reversemotor, 0);
   }
 
   Throttle::potmin[0] = Param::GetInt(Param::potmin);
@@ -1340,6 +1381,7 @@ void Param::Change(Param::PARAM_NUM paramNum) {
   IOMatrix::AssignFromParams();
   IOMatrix::AssignFromParamsAnalogue();
 
+  maintainer12V.ParamsChange();
   preheater.ParamsChange();
 }
 
@@ -1460,7 +1502,6 @@ int main(void) {
   c.AddCallback(&cb);
   c2.AddCallback(&cb);
   TerminalCommands::SetCanMap(&cm);
-  SdoCommands::SetCanMap(&cm);
   canMap = &cm;
   canSdo = &sdo;
 
@@ -1501,15 +1542,11 @@ int main(void) {
 
   while (1) {
     char c = 0;
-    CanSdo::SdoFrame *sdoFrame = sdo.GetPendingUserspaceSdo();
     t.Run();
+    // SDO requests are serviced inside CanSdo (from CanSdo::HandleRx); the loop
+    // only drives the terminal and the JSON param dump.
     if (sdo.GetPrintRequest() == PRINT_JSON) {
       TerminalCommands::PrintParamsJson(&sdo, &c);
-    }
-    if (0 != sdoFrame) {
-      SdoCommands::ProcessStandardCommands(sdoFrame);
-
-      sdo.SendSdoReply(sdoFrame);
     }
   }
 

@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define VER 2.40.0TA
+#define VER 2.41.0TA
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -32,7 +32,7 @@
 #define PARAM_LIST                                                             \
   PARAM_ENTRY(CAT_SETUP, Inverter, INVMODES, 0, 9, 0, 5)                       \
   PARAM_ENTRY(CAT_SETUP, Vehicle, VEHMODES, 0, 8, 0, 6)                        \
-  PARAM_ENTRY(CAT_SETUP, GearLvr, SHIFTERS, 0, 4, 0, 108)                      \
+  PARAM_ENTRY(CAT_SETUP, GearLvr, SHIFTERS, 0, 5, 0, 108)                      \
   PARAM_ENTRY(CAT_SETUP, Transmission, TRNMODES, 0, 1, 0, 78)                  \
   PARAM_ENTRY(CAT_SETUP, interface, CHGINT, 0, 4, 0, 39)                       \
   PARAM_ENTRY(CAT_SETUP, chargemodes, CHGMODS, 0, 8, 0, 37)                    \
@@ -118,6 +118,7 @@
   PARAM_ENTRY(CAT_HEATER, HeatPotDir, ABOVEBELOW, 0, 4, 0, 150)                \
   PARAM_ENTRY(CAT_HEATER, HeatPotOn, "dig", 0, 4095, 0, 151)                   \
   PARAM_ENTRY(CAT_HEATER, HeatPotFull, "dig", 0, 4095, 0, 152)                 \
+  PARAM_ENTRY(CAT_HEATER, PreHeatNow, ONOFF, 0, 1, 0, 161)                     \
   PARAM_ENTRY(CAT_AIRCON, Compressor, COMPRESSMODES, 0, 1, 0, 153)             \
   PARAM_ENTRY(CAT_AIRCON, AirConCtrl, ONOFF, 0, 1, 0, 154)                     \
   PARAM_ENTRY(CAT_CLOCK, Set_Day, DOW, 0, 6, 0, 46)                            \
@@ -153,6 +154,10 @@
   PARAM_ENTRY(CAT_IOPINS, DigiPot2Step, "dig", 0, 255, 0, 118)                 \
   PARAM_ENTRY(CAT_IOPINS, FanTemp, "°C", 0, 100, 40, 134)                      \
   PARAM_ENTRY(CAT_IOPINS, TachoPPR, "PPR", 0, 100, 2, 136)                     \
+  PARAM_ENTRY(CAT_12V, uauxGain, "", 0, 500, 210, 157)                         \
+  PARAM_ENTRY(CAT_12V, minVolts, "", 11, 13, 12, 158)                          \
+  PARAM_ENTRY(CAT_12V, allowWakeup, ONOFF, 0, 1, 0, 159)                       \
+  PARAM_ENTRY(CAT_12V, wakeupMin, "Mins", 0, 20, 0, 160)                       \
   PARAM_ENTRY(CAT_SHUNT, IsaInit, ONOFF, 0, 1, 0, 75)                          \
   PARAM_ENTRY(CAT_PWM, Tim3_Presc, "", 1, 72000, 719, 100)                     \
   PARAM_ENTRY(CAT_PWM, Tim3_Period, "", 1, 100000, 7200, 101)                  \
@@ -263,6 +268,8 @@
   VALUE_ENTRY(compressStat, COMP_STAT, 2111)                                   \
   VALUE_ENTRY(compressRPM, "", 2109)                                           \
   VALUE_ENTRY(PWMHeatOn, ONOFF, 2112)                                          \
+  VALUE_ENTRY(maintainWakeups, "", 2124)                                       \
+  VALUE_ENTRY(minsUntilAllowedAgain, "", 2125)                                 \
   VALUE_ENTRY(uptime, "sec", 2113)                                             \
   VALUE_ENTRY(MG1Torque, "", 2114)                                             \
   VALUE_ENTRY(MG2Torque, "", 2115)                                             \
@@ -301,7 +308,7 @@
   "20=PwmTim3, 21=CpSpoof, 22=GS450pump, 23=PwmTempGauge, 24=PwmSocGauge,"     \
   "25=PwmHeater"
 #define APINFUNCS "0=None, 1=ProxPilot, 2=BrakeVacSensor, 3=HeaterPot"
-#define SHIFTERS "0=None, 1=BMW_F30, 2=JLR_G1, 3=JLR_G2, 4=BMW_E65"
+#define SHIFTERS "0=None, 1=BMW_F30, 2=JLR_G1, 3=JLR_G2, 4=BMW_E65, 5=PKP2300"
 #define SHNTYPE "0=None, 1=ISA, 2=SBOX, 3=VAG. 4=ISA_udcsw"
 #define DMODES "0=CLOSED, 1=OPEN, 2=ERROR, 3=INVALID"
 #define POTMODES "0=SingleChannel, 1=DualChannel"
@@ -319,7 +326,8 @@
 #define BMSMODES                                                               \
   "0=Off, 1=SimpBMS, 2=TiDaisychainSingle, 3=TiDaisychainDual, 4=LeafBms, "    \
   "5=RenaultKangoo33, 6=STW, 7=OIFlyingAdc"
-#define OPMODES "0=Off, 1=Run, 2=Precharge, 3=PchFail, 4=Charge, 5=Preheat"
+#define OPMODES                                                                \
+  "0=Off, 1=Run, 2=Precharge, 3=PchFail, 4=Charge, 5=12VMaintain, 6=Preheat"
 #define DOW "0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat"
 #define CHGTYPS "0=Off, 1=AC, 2=DCFC"
 #define DCDCTYPES "0=NoDCDC, 1=TeslaG2, 2=DCDCElcon"
@@ -372,6 +380,7 @@
 #define CAT_SHUNT "ISA Shunt Control"
 #define CAT_IOPINS "General Purpose I/O"
 #define CAT_PWM "PWM Control"
+#define CAT_12V "12V Battery"
 #define MotorsAct "0=Mg1and2, 1=Mg1, 2=Mg2, 3=BlendingMG2and1"
 #define PumpOutType "0=GS450hOil, 1=TachoOut, 2=SpeedoOut"
 #define LIMITREASON                                                            \
@@ -392,6 +401,7 @@ enum modes {
   MOD_PRECHARGE,
   MOD_PCHFAIL,
   MOD_CHARGE,
+  MOD_MAINTAIN,
   MOD_PREHEAT,
   MOD_LAST
 };
@@ -475,7 +485,8 @@ enum ShifterModes {
   BMWF30 = 1,
   JLRG1 = 2,
   JLRG2 = 3,
-  BMWE65 = 4
+  BMWE65 = 4,
+  PKP2300 = 5
 
 };
 
