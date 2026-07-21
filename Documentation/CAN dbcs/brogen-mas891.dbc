@@ -1,0 +1,875 @@
+VERSION ""
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: BMS EGS GW ICS MCU VCU
+
+
+BO_ 1026 BMS_402: 8 BMS
+ SG_ NMBMS_SourceID : 7|8@0+ (1,0) [0|255] "" ICS
+ SG_ NMBMS_RepeatReq : 8|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_Actwake : 12|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_RepeatFromSleep : 16|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_RepeatFromPrepare : 17|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_RepeatFromNormal : 18|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_RepeatFromReady : 19|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_NormalFromRepeat : 20|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_NormalFromReady : 21|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_WakeSource : 28|5@0+ (1,0) [0|31] "" ICS
+ SG_ NMBMS_ActiveSource1 : 32|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_ActiveSource2 : 33|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_ActiveSource3 : 34|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_ActiveSource4 : 35|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_ActiveSource5 : 36|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_ActiveSource6 : 37|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_ActiveSource7 : 38|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMBMS_ActiveSource8 : 39|1@0+ (1,0) [0|1] "" ICS
+
+BO_ 157 BMS_09D: 8 BMS
+ SG_ BMS_HVConnectStt : 7|2@0+ (1,0) [0|3] "" ICS
+ SG_ BMS_PackVoltage : 23|13@0+ (0.1,0) [0|500] "V" ICS
+
+BO_ 711 BMS_2C7: 8 BMS
+ SG_ BMS_OnChrgCmd : 7|1@0+ (1,0) [0|1] "" ICS
+ SG_ BMS_MaxChgVolt : 12|13@0+ (0.1,0) [0|500] "V" ICS
+ SG_ BMS_ChargeVoltage : 31|13@0+ (0.1,0) [0|500] "V" ICS
+ SG_ BMS_ChgCurrReq : 34|13@0+ (0.1,-700) [-700|0] "A" ICS
+ SG_ BMS_ObcReadyReq : 53|1@0+ (1,0) [0|1] "" ICS
+ SG_ BMS_OnDischrgCmd : 52|1@0+ (1,0) [0|1] "" ICS
+ SG_ BMS_RollingCounter_2C7 : 51|4@0+ (1,0) [0|15] "" ICS
+ SG_ BMS_Checksum_2C7 : 63|8@0+ (1,0) [0|255] "" ICS
+
+BO_ 714 BMS_2CA: 8 BMS
+ SG_ BMS_ElockRequest : 55|2@0+ (1,0) [0|3] "" ICS
+
+BO_ 718 BMS_2CE: 8 BMS
+ SG_ BMS_Batt_Full : 26|1@0+ (1,0) [0|1] "" ICS
+ SG_ BMS_DCChgConnectSt : 57|2@0+ (1,0) [0|3] "" ICS
+
+BO_ 312 DCDC_138: 8 ICS
+ SG_ DCDC_UdcLvCurr : 7|9@0+ (0.125,0) [0|63.875] "V" VCU,GW
+ SG_ DCDC_IdcLvCurr : 14|11@0+ (1,-1023) [-1023|1024] "A" VCU,GW
+ SG_ DCDC_stMode : 18|3@0+ (1,0) [0|7] "" VCU,GW
+ SG_ DCDC_IdcHvCurr : 31|11@0+ (0.0625,-64) [-64|63.8125] "A" VCU,GW
+ SG_ DCDC_OTAModeSts : 43|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_UdcHv : 36|9@0+ (1,0) [0|511] "" VCU,GW
+ SG_ DCDC_RollingCounter_138 : 51|4@0+ (1,0) [0|15] "" VCU
+ SG_ DCDC_Checksum_138 : 63|8@0+ (1,0) [0|255] "" VCU
+
+BO_ 690 DCDC_2B2: 8 ICS
+ SG_ DCDC_TempM1 : 7|8@0+ (1,-40) [-40|215] "" VCU
+ SG_ DCDC_TempWater : 23|8@0+ (1,-40) [-40|215] "" VCU
+ SG_ DCDC_TempPFC : 31|8@0+ (1,-40) [-40|215] "" VCU
+ SG_ DCDC_TempLLC : 39|8@0+ (1,-40) [-40|215] "" VCU
+ SG_ DCDC_WorkMode : 47|2@0+ (1,0) [0|3] "" VCU,GW
+ SG_ DCDC_RollingCounter_2B2 : 51|4@0+ (1,0) [0|15] "" VCU
+ SG_ DCDC_Checksum_2B2 : 63|8@0+ (1,0) [0|255] "" VCU
+
+BO_ 694 DCDC_2B6: 8 ICS
+ SG_ DCDC_TempCurr : 15|8@0+ (1,-40) [-40|215] "°C" VCU,GW
+ SG_ DCDC_ErrLevel : 55|3@0+ (1,0) [0|7] "" VCU,GW
+ SG_ DCDC_bErrShtOff : 52|1@0+ (1,0) [0|1] "" VCU
+ SG_ DCDC_RollingCounter_2B6 : 51|4@0+ (1,0) [0|15] "" VCU
+ SG_ DCDC_Checksum_2B6 : 63|8@0+ (1,0) [0|255] "" VCU
+
+BO_ 877 DCDC_36D: 8 ICS
+ SG_ DCDC_VCU11F_CanMsgTime_Out : 7|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_VCU11F_ChecksumErr : 6|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_VCU11FCanMsg_LenErr : 5|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_CanMsgEM_InternalUART1 : 4|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_CanMsgEM_InternalUART2 : 3|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_BnetOpen : 2|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_BnetShort : 1|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_BuckMod : 0|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_CanBusOff : 15|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_VCU11F_CANMissing : 14|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_MaxRstRea : 13|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_TempM1OTP : 12|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_TempWaterOTP : 11|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_TempPFCOTP : 10|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_TempLLCOTP : 9|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_TempAirOTP : 8|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_TempInSenseErr : 23|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_UBnetUnder : 22|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_UBnetOver : 21|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_UBnetSpOutdRng : 20|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_LVVolFdErr : 19|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_ULnkOver : 18|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_ULnkUnder : 17|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_OutputOCP : 16|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_LVCurrFdErr : 31|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_PFCOverVol : 30|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_LVNoOutputErr : 29|1@0+ (1,0) [0|1] "" GW
+ SG_ DCDC_TempWaterDerating : 28|1@0+ (1,0) [0|1] "" VCU
+ SG_ DCDC_TempMOS3Derating : 27|1@0+ (1,0) [0|1] "" VCU
+
+BO_ 1028 EGS_404: 8 EGS
+ SG_ NMEGS_SourceID : 7|8@0+ (1,0) [0|255] "" ICS
+ SG_ NMEGS_RepeatReq : 8|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_Actwake : 12|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_RepeatFromSleep : 16|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_RepeatFromPrepare : 17|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_RepeatFromNormal : 18|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_RepeatFromReady : 19|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_NormalFromRepeat : 20|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_NormalFromReady : 21|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_WakeSource : 28|5@0+ (1,0) [0|31] "" ICS
+ SG_ NMEGS_ActiveSource1 : 32|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMEGS_ActiveSource2 : 33|1@0+ (1,0) [0|1] "" ICS
+
+BO_ 1025 MCU_401: 8 MCU
+ SG_ NMMCU_SourceID : 7|8@0+ (1,0) [0|255] "" ICS
+ SG_ NMMCU_RepeatReq : 8|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_Actwake : 12|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_RepeatFromSleep : 16|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_RepeatFromPrepare : 17|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_RepeatFromNormal : 18|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_RepeatFromReady : 19|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_NormalFromRepeat : 20|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_NormalFromReady : 21|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_WakeSource : 28|5@0+ (1,0) [0|31] "" ICS
+ SG_ NMMCU_ActiveSource1 : 32|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMMCU_ActiveSource2 : 33|1@0+ (1,0) [0|1] "" ICS
+
+BO_ 737 OBC_2E1: 8 ICS
+ SG_ OBC_failerrSts : 3|4@0+ (1,0) [0|15] "" VCU,BMS,GW
+ SG_ OBC_EleccLckStt : 15|2@0+ (1,0) [0|3] "" VCU,BMS,GW
+ SG_ OBC_CPStatus : 11|3@0+ (1,0) [0|7] "" VCU,BMS,GW
+ SG_ OBC_PwmDuty : 23|7@0+ (1,0) [0|100] "%" VCU,BMS,GW
+ SG_ OBC_HV_DC_MAXPOWER : 27|10@0+ (10,0) [0|6600] "" VCU,BMS
+ SG_ OBC_RollingCounter_2E1 : 51|4@0+ (1,0) [0|15] "" VCU,BMS
+ SG_ OBC_Checksum_2E1 : 63|8@0+ (1,0) [0|255] "" VCU,BMS
+
+BO_ 738 OBC_2E2: 8 ICS
+ SG_ OBC_AirTemp : 7|8@0+ (1,-40) [-40|214] "DegC" VCU
+ SG_ OBC_M1Temp : 15|8@0+ (1,-40) [-40|214] "DegC" VCU
+ SG_ OBC_PFCTemp : 23|8@0+ (1,-40) [-40|214] "DegC" VCU
+ SG_ OBC_LLCTemp : 31|8@0+ (1,-40) [-40|214] "DegC" VCU
+ SG_ OBC_NTC2_Temp : 39|8@0+ (1,-40) [-40|215] "DegC" VCU
+ SG_ OBC_NTC1_Temp : 47|8@0+ (1,-40) [-40|215] "DegC" VCU
+ SG_ OBC_TempWater : 55|8@0+ (1,-40) [-40|215] "" VCU
+
+BO_ 739 OBC_2E3: 8 ICS
+ SG_ OBC_AC_Current_L2 : 7|8@0+ (0.2,0) [0|51] "A" BMS
+ SG_ OBC_AC_Voltage_L2 : 15|8@0+ (2,0) [0|508] "V" BMS
+ SG_ OBC_AC_Current_L3 : 23|8@0+ (0.2,0) [0|51] "A" BMS
+ SG_ OBC_AC_Voltage_L3 : 31|8@0+ (2,0) [0|508] "V" BMS
+ SG_ OBC_NTC3_Temp : 39|8@0+ (1,-40) [-40|215] "DegC" VCU
+ SG_ OBC_NTC4_Temp : 47|8@0+ (1,-40) [-40|215] "DegC" VCU
+
+BO_ 742 OBC_2E6: 8 ICS
+ SG_ OBC_Ecy : 7|8@0+ (0.5,0) [0|127.5] "%" VCU,BMS,GW
+ SG_ OBC_HV_DC_MAXCurr : 15|8@0+ (0.2,0) [0|51] "A" VCU,BMS
+ SG_ OBC_HV_DC_MAXVolt : 23|8@0+ (2,0) [0|508] "V" VCU,BMS
+ SG_ OBC_HV_DC_Curr : 31|10@0+ (0.1,-50) [-50|50] "A" VCU,BMS,GW
+ SG_ OBC_HV_DC_Volt : 37|15@0+ (0.02,0) [0|655.32] "V" VCU,BMS,GW
+ SG_ S2_staus : 54|1@0+ (1,0) [0|1] "" VCU,BMS,GW
+ SG_ OBC_RollingCounter_2E6 : 51|4@0+ (1,0) [0|15] "" VCU,BMS
+ SG_ OBC_Checksum_2E6 : 63|8@0+ (1,0) [0|255] "" VCU,BMS
+
+BO_ 747 OBC_2EB: 8 ICS
+ SG_ OBC_Status : 7|4@0+ (1,0) [0|15] "" VCU,BMS,GW
+ SG_ OBC_WorkMode : 3|2@0+ (1,0) [0|3] "" BMS
+ SG_ OBC_ProductModel : 26|3@0+ (1,0) [0|7] "" VCU
+ SG_ OBC_CC_connect_Status : 31|4@0+ (1,0) [0|15] "" VCU,BMS,GW
+ SG_ OBC_Discharging_MaxAC_Power : 34|15@0+ (0.02,0) [0|6.6] "KVA" VCU
+ SG_ OBC_AC_Current : 15|8@0+ (0.2,0) [0|51] "A" VCU,GW
+ SG_ OBC_AC_Voltage : 23|8@0+ (2,0) [0|508] "V" VCU,GW
+ SG_ OBC_RollingCounter_2EB : 51|4@0+ (1,0) [0|15] "" VCU,BMS
+ SG_ OBC_Checksum_2EB : 63|8@0+ (1,0) [0|255] "" VCU,BMS
+
+BO_ 749 OBC_2ED: 8 ICS
+ SG_ OBC_BMS_2C7_Checksum : 7|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC1_wiredisconnect : 6|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC2_wiredisconnect : 5|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC1_TempOverTP : 4|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC1_TempUTP : 3|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC2_TempOverTP : 2|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC2_TempUTP : 1|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_M1TempOverTP : 0|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempAirOTP : 15|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempAirUTP : 14|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempWaterOTP : 13|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_PFCTempOverTP : 12|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_LLCOTP : 11|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_BMS_2C7_CANMissing : 10|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_SCICommunicate_Err : 9|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_KL30UV : 8|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_KL30OV : 23|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_ElockLockErr : 22|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_ElockUnLockErr : 21|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC1_TempDeratingTP : 20|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC2_TempDeratingTP : 19|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempInSenseErr : 18|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempM1Derate : 17|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempPFCDerate : 16|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempLLCDerate : 31|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_TempWaterDerate : 30|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_Fault_time_Out : 29|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_CANBUS_OFF : 28|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_HV_DC_UV : 27|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_HV_DC_OV : 26|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_HV_DC_Short : 25|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_AC_Short : 24|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_PFCOV : 39|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_PFCUnderVol : 38|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_SecSideSwOverCurrent : 37|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_AC_OV : 36|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_AC_OC : 35|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_AC_UV : 34|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_PriySideHwOverCurrent : 33|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_SecSideHwOverCurrent : 32|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_Acinvolt_time_out : 47|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_Charge_EnTo : 46|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_DisCharge_EnTo : 45|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_ChargerConn_Timeout : 44|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_ChargerS2ON_Timeout : 43|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_V2V_CPDutyErr : 42|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_ACout_time_out : 41|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_HV_DC_OC : 40|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC3_wiredisconnect : 55|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC3_TempOverTP : 54|1@0+ (1,0) [0|1] "" BMS
+ SG_ OBC_NTC3_TempUTP : 53|1@0+ (1,0) [0|1] "" BMS
+ SG_ OBC_NTC3_TempDeratingTP : 52|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC4_wiredisconnect : 51|1@0+ (1,0) [0|1] "" GW
+ SG_ OBC_NTC4_TempOverTP : 50|1@0+ (1,0) [0|1] "" BMS
+ SG_ OBC_NTC4_TempUTP : 49|1@0+ (1,0) [0|1] "" BMS
+ SG_ OBC_NTC4_TempDeratingTP : 48|1@0+ (1,0) [0|1] "" GW
+
+BO_ 1027 ICS_403: 8 ICS
+ SG_ NMOBC_SourceID : 7|8@0+ (1,0) [0|255] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_RepeatReq : 8|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_Actwake : 12|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_RepeatFromSleep : 16|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_RepeatFromPrepare : 17|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_RepeatFromNormal : 18|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_RepeatFromReady : 19|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_NormalFromRepeat : 20|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_NormalFromReady : 21|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_WakeSource : 28|5@0+ (1,0) [0|31] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_ActiveSource1 : 32|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_ActiveSource2 : 33|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+ SG_ NMOBC_ActiveSource3 : 34|1@0+ (1,0) [0|1] "" VCU,BMS,MCU,EGS,GW
+
+BO_ 287 VCU_11F: 8 VCU
+ SG_ VCU_DC_IdcHvMaxSetP : 14|11@0+ (0.0625,-64) [-64|63.9375] "A" ICS
+ SG_ VCU_DC_IdcLvMaxSetP : 19|11@0+ (1,-1023) [-1023|1024] "A" ICS
+ SG_ VCU_DC_UdcLvSetP : 24|9@0+ (0.125,0) [0|63.875] "V" ICS
+ SG_ VCU_DC_stModereq : 47|3@0+ (1,0) [0|7] "" ICS
+ SG_ VCU_RollingCounter_11F : 51|4@0+ (1,0) [0|15] "" ICS
+ SG_ VCU_Checksum_11F : 63|8@0+ (1,0) [0|255] "" ICS
+
+BO_ 675 VCU_2A3: 8 VCU
+ SG_ VCU_ChargeLoadPower : 7|8@0+ (0.1,0) [0|25.5] "" ICS
+ SG_ VCU_BMSPreThemalPermit : 10|2@0+ (1,0) [0|3] "" ICS
+ SG_ VCU_OBCDischgPermitPower : 47|8@0+ (0.1,0) [0|25.5] "kw" ICS
+
+BO_ 677 VCU_2A5: 8 VCU
+ SG_ VCU_ElecModFlg : 4|3@0+ (1,0) [0|7] "" ICS
+
+BO_ 679 VCU_2A7: 8 VCU
+ SG_ VCU_FaultLvl : 7|3@0+ (1,0) [0|7] "" ICS
+ SG_ VCU_AGSActPosition : 39|8@0+ (1,0) [0|100] "%" ICS
+ SG_ VCU_DrvPumpDC : 55|4@0+ (10,0) [0|100] "%" ICS
+
+BO_ 1029 VCU_405: 8 VCU
+ SG_ NMVCU_SourceID : 7|8@0+ (1,0) [0|255] "" ICS
+ SG_ NMVCU_RepeatReq : 8|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_Actwake : 12|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_RepeatFromSleep : 16|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_RepeatFromPrepare : 17|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_RepeatFromNormal : 18|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_RepeatFromReady : 19|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_NormalFromRepeat : 20|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_NormalFromReady : 21|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_WakeSource : 28|5@0+ (1,0) [0|31] "" ICS
+ SG_ NMVCU_ActiveSource1 : 32|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_ActiveSource2 : 33|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_ActiveSource3 : 34|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMVCU_ActiveSource4 : 35|1@0+ (1,0) [0|1] "" ICS
+
+BO_ 405 IVI_195: 8 GW
+ SG_ IVI_Elock_open_Req : 13|2@0+ (1,0) [0|3] "" ICS
+
+BO_ 381 BCM_17D: 8 GW
+ SG_ BCM_PwrDistributionSts : 2|3@0+ (1,0) [0|7] "" ICS
+ SG_ BCM_Elock_open_Req : 18|1@0+ (1,0) [0|1] "" ICS
+
+BO_ 895 IVI_37F: 8 GW
+ SG_ IVI_YearSet : 5|6@0+ (1,2018) [2018|2068] "" ICS
+ SG_ IVI_MonthSet : 11|4@0+ (1,0) [1|12] "" ICS
+ SG_ IVI_DaySet : 20|5@0+ (1,0) [1|31] "" ICS
+ SG_ IVI_HourSet : 28|5@0+ (1,0) [0|23] "" ICS
+ SG_ IVI_MinuteSet : 37|6@0+ (1,0) [0|59] "" ICS
+ SG_ IVI_SecondSet : 45|6@0+ (1,0) [0|59] "" ICS
+
+BO_ 653 TBOX_28D: 8 GW
+ SG_ TBOX_OTAmodeONReq : 58|1@0+ (1,0) [0|1] "" ICS
+ SG_ TBOX_OTAmodeOFFReq : 59|1@0+ (1,0) [0|1] "" ICS
+
+BO_ 1024 GW_400: 8 GW
+ SG_ NMGW_SourceID : 7|8@0+ (1,0) [0|255] "" ICS
+ SG_ NMGW_RepeatReq : 8|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_Actwake : 12|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_RepeatFromSleep : 16|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_RepeatFromPrepare : 17|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_RepeatFromNormal : 18|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_RepeatFromReady : 19|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_NormalFromRepeat : 20|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_NormalFromReady : 21|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_WakeSource : 28|5@0+ (1,0) [0|31] "" ICS
+ SG_ NMGW_ActiveSource1 : 32|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_ActiveSource2 : 33|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_ActiveSource3 : 34|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_ActiveSource4 : 35|1@0+ (1,0) [0|1] "" ICS
+ SG_ NMGW_WakeSource_CAN : 58|3@0+ (1,0) [0|6] "" ICS
+
+BO_ 938 GW_3AA: 8 GW
+ SG_ GW_VIN_Value_1 : 7|8@0+ (1,0) [0|255] "" ICS
+ SG_ GW_VIN_Value_2 : 15|8@0+ (1,0) [0|255] "" ICS
+ SG_ GW_VIN_Value_3 : 23|8@0+ (1,0) [0|255] "" ICS
+ SG_ GW_VIN_Value_4 : 31|8@0+ (1,0) [0|255] "" ICS
+ SG_ GW_VIN_Value_5 : 39|8@0+ (1,0) [0|255] "" ICS
+ SG_ GW_VIN_Value_6 : 47|8@0+ (1,0) [0|255] "" ICS
+ SG_ GW_VIN_Value_7 : 55|8@0+ (1,0) [0|255] "" ICS
+ SG_ GW_VINFrameNumber : 63|8@0+ (1,0) [0|255] "" ICS
+
+BO_ 685 GW_2AD: 8 GW
+ SG_ ESP_VehicleSpeedValid : 9|1@0+ (1,0) [0|1] "" ICS
+ SG_ ESP_VehicleSpeed : 7|13@0+ (0.05625,0) [0|240] "km/h" ICS
+
+BO_ 735 GW_2DF: 8 GW
+ SG_ IP_TotalOdometer : 7|24@0+ (0.1,0) [0|1677721.4] "km" ICS
+ SG_ IP_OdometerSts : 47|1@0+ (1,0) [0|1] "" ICS
+
+
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 10000;
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+
+BA_ "GenMsgCycleTime" BO_ 157 10;
+BA_ "GenMsgCycleTime" BO_ 711 100;
+BA_ "GenMsgCycleTime" BO_ 714 100;
+BA_ "GenMsgCycleTime" BO_ 718 100;
+BA_ "GenMsgCycleTime" BO_ 312 20;
+BA_ "GenMsgCycleTime" BO_ 690 100;
+BA_ "GenMsgCycleTime" BO_ 694 100;
+BA_ "GenMsgCycleTime" BO_ 877 500;
+BA_ "GenMsgCycleTime" BO_ 737 100;
+BA_ "GenMsgCycleTime" BO_ 738 100;
+BA_ "GenMsgCycleTime" BO_ 739 100;
+BA_ "GenMsgCycleTime" BO_ 742 100;
+BA_ "GenMsgCycleTime" BO_ 747 100;
+BA_ "GenMsgCycleTime" BO_ 749 100;
+BA_ "GenMsgCycleTime" BO_ 287 20;
+BA_ "GenMsgCycleTime" BO_ 675 10;
+BA_ "GenMsgCycleTime" BO_ 677 100;
+BA_ "GenMsgCycleTime" BO_ 679 100;
+BA_ "GenMsgCycleTime" BO_ 405 500;
+BA_ "GenMsgCycleTime" BO_ 381 20;
+BA_ "GenMsgCycleTime" BO_ 895 500;
+BA_ "GenMsgCycleTime" BO_ 653 500;
+BA_ "GenMsgCycleTime" BO_ 938 1000;
+BA_ "GenMsgCycleTime" BO_ 685 100;
+BA_ "GenMsgCycleTime" BO_ 735 100;
+
+CM_ SG_ 1026 NMBMS_SourceID "ECU Address";
+CM_ SG_ 1026 NMBMS_RepeatReq "Repeat Message State Request";
+CM_ SG_ 1026 NMBMS_Actwake "Active Wake Bit";
+CM_ SG_ 1026 NMBMS_RepeatFromSleep "Repeat Message State From Sleep state";
+CM_ SG_ 1026 NMBMS_RepeatFromPrepare "Repeat Message State From Prepare Sleep state";
+CM_ SG_ 1026 NMBMS_RepeatFromNormal "Repeat Message State From Normal Operation state";
+CM_ SG_ 1026 NMBMS_RepeatFromReady "Repeat Message State From Ready Sleep state";
+CM_ SG_ 1026 NMBMS_NormalFromRepeat "Normal Operation state From Repeat Message State";
+CM_ SG_ 1026 NMBMS_NormalFromReady "Normal Operation state From Ready Sleep state";
+CM_ SG_ 1026 NMBMS_WakeSource "Wake Source";
+CM_ SG_ 1026 NMBMS_ActiveSource1 "The NM active sorce is KL15";
+CM_ SG_ 1026 NMBMS_ActiveSource2 "The NM active sorce is Diagnosis";
+CM_ SG_ 1026 NMBMS_ActiveSource3 "预约充电唤醒";
+CM_ SG_ 1026 NMBMS_ActiveSource4 "Apluswakeup";
+CM_ SG_ 1026 NMBMS_ActiveSource5 "OBCwakeup";
+CM_ SG_ 1026 NMBMS_ActiveSource6 "RTCwakeup";
+CM_ SG_ 1026 NMBMS_ActiveSource7 "TPLwakeup";
+CM_ SG_ 1026 NMBMS_ActiveSource8 "The NM active sorce is Intelegent charging";
+CM_ SG_ 157 BMS_HVConnectStt "BMS高压连接状态";
+CM_ SG_ 157 BMS_PackVoltage "BMS母线电压";
+CM_ SG_ 711 BMS_OnChrgCmd "充电指令";
+CM_ SG_ 711 BMS_MaxChgVolt "充电最高允许电压";
+CM_ SG_ 711 BMS_ChargeVoltage "充电需求电压";
+CM_ SG_ 711 BMS_ChgCurrReq "充电请求电流";
+CM_ SG_ 711 BMS_ObcReadyReq "慢充准备信号";
+CM_ SG_ 711 BMS_OnDischrgCmd "Obc放电指令";
+CM_ SG_ 711 BMS_RollingCounter_2C7 "报文计数器";
+CM_ SG_ 711 BMS_Checksum_2C7 "校验和 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 714 BMS_ElockRequest "快充解锁、上锁信号";
+CM_ SG_ 718 BMS_Batt_Full "电池充满确认（仪表Reserved）";
+CM_ SG_ 718 BMS_DCChgConnectSt "直流充电枪连接状态";
+CM_ SG_ 312 DCDC_UdcLvCurr "Low side voltage of DCDC DCDC 低压端电压";
+CM_ SG_ 312 DCDC_IdcLvCurr "Low side current of DCDC DCDC 低压端电流";
+CM_ SG_ 312 DCDC_stMode "stMode of DCDC DCDC 状态机";
+CM_ SG_ 312 DCDC_IdcHvCurr "current I at high voltage at DCDC DCDC高压端电流";
+CM_ SG_ 312 DCDC_OTAModeSts "OTA Mode status";
+CM_ SG_ 312 DCDC_UdcHv "DCDC input voltage";
+CM_ SG_ 312 DCDC_RollingCounter_138 "报文计数器";
+CM_ SG_ 312 DCDC_Checksum_138 "校验和 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 690 DCDC_TempM1 "M1 temperature";
+CM_ SG_ 690 DCDC_TempWater "Water temperature";
+CM_ SG_ 690 DCDC_TempPFC "PFC temperature";
+CM_ SG_ 690 DCDC_TempLLC "LLC temperature";
+CM_ SG_ 690 DCDC_WorkMode "DCDC work mode";
+CM_ SG_ 690 DCDC_RollingCounter_2B2 "报文计数器";
+CM_ SG_ 690 DCDC_Checksum_2B2 "校验和 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 694 DCDC_TempCurr "actual temperature of DCDC(for HCU pump control) DCDC当前温度";
+CM_ SG_ 694 DCDC_ErrLevel "Fault Level of DCDC DCDC 故障等级";
+CM_ SG_ 694 DCDC_bErrShtOff "DCDC 因故停止工作的标志位";
+CM_ SG_ 694 DCDC_RollingCounter_2B6 "报文计数器";
+CM_ SG_ 694 DCDC_Checksum_2B6 "校验和 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 877 DCDC_VCU11F_CanMsgTime_Out "DCDC can message timeout";
+CM_ SG_ 877 DCDC_VCU11F_ChecksumErr "DCDC CRC checksum error";
+CM_ SG_ 877 DCDC_VCU11FCanMsg_LenErr "DCDC can message length error";
+CM_ SG_ 877 DCDC_CanMsgEM_InternalUART1 "DCDC internal UART1 message error";
+CM_ SG_ 877 DCDC_CanMsgEM_InternalUART2 "DCDC internal UART2 message error";
+CM_ SG_ 877 DCDC_BnetOpen "B+B- open error(Judge befor DCDC working）";
+CM_ SG_ 877 DCDC_BnetShort "B+B- open error（Judge when DCDC working）";
+CM_ SG_ 877 DCDC_BuckMod "Buck mode";
+CM_ SG_ 877 DCDC_CanBusOff "CAN bus off";
+CM_ SG_ 877 DCDC_VCU11F_CANMissing "VCU CAN missing";
+CM_ SG_ 877 DCDC_MaxRstRea "DC/DC Cumulative number of recoveries from failure state exceeds threshold";
+CM_ SG_ 877 DCDC_TempM1OTP "M1 over temperature";
+CM_ SG_ 877 DCDC_TempWaterOTP "Water over temperature power off";
+CM_ SG_ 877 DCDC_TempPFCOTP "PFC over temperature";
+CM_ SG_ 877 DCDC_TempLLCOTP "LLC over temperature";
+CM_ SG_ 877 DCDC_TempAirOTP "Air over temperature";
+CM_ SG_ 877 DCDC_TempInSenseErr "DCDC Inside temprature sensor error";
+CM_ SG_ 877 DCDC_UBnetUnder "LV software under voltage fault，《7V";
+CM_ SG_ 877 DCDC_UBnetOver "LV software over voltage fault，》17V";
+CM_ SG_ 877 DCDC_UBnetSpOutdRng "LV Voltage set point error";
+CM_ SG_ 877 DCDC_LVVolFdErr "LV voltage feedback error";
+CM_ SG_ 877 DCDC_ULnkOver "HV software over voltage fault";
+CM_ SG_ 877 DCDC_ULnkUnder "High voltage software under voltage fault";
+CM_ SG_ 877 DCDC_OutputOCP "DCDC LV software over current error";
+CM_ SG_ 877 DCDC_LVCurrFdErr "LV current feedback abnormality";
+CM_ SG_ 877 DCDC_PFCOverVol "PFC voltage over 460V";
+CM_ SG_ 877 DCDC_LVNoOutputErr "DCDC no output error";
+CM_ SG_ 877 DCDC_TempWaterDerating "DCDC_TempWaterDerating";
+CM_ SG_ 877 DCDC_TempMOS3Derating "DCDC_TempMOS3Derating";
+CM_ SG_ 1028 NMEGS_SourceID "ECU Address";
+CM_ SG_ 1028 NMEGS_RepeatReq "Repeat Message State Request";
+CM_ SG_ 1028 NMEGS_Actwake "Active Wake Bit";
+CM_ SG_ 1028 NMEGS_RepeatFromSleep "Repeat Message State From Sleep state";
+CM_ SG_ 1028 NMEGS_RepeatFromPrepare "Repeat Message State From Prepare Sleep state";
+CM_ SG_ 1028 NMEGS_RepeatFromNormal "Repeat Message State From Normal Operation state";
+CM_ SG_ 1028 NMEGS_RepeatFromReady "Repeat Message State From Ready Sleep state";
+CM_ SG_ 1028 NMEGS_NormalFromRepeat "Normal Operation state From Repeat Message State";
+CM_ SG_ 1028 NMEGS_NormalFromReady "Normal Operation state From Ready Sleep state";
+CM_ SG_ 1028 NMEGS_WakeSource "Wake Source";
+CM_ SG_ 1028 NMEGS_ActiveSource1 "The NM active sorce is KL15";
+CM_ SG_ 1028 NMEGS_ActiveSource2 "The NM active sorce is Diagnosis";
+CM_ SG_ 1025 NMMCU_SourceID "ECU Address";
+CM_ SG_ 1025 NMMCU_RepeatReq "Repeat Message State Request";
+CM_ SG_ 1025 NMMCU_Actwake "Active Wake Bit";
+CM_ SG_ 1025 NMMCU_RepeatFromSleep "Repeat Message State From Sleep state";
+CM_ SG_ 1025 NMMCU_RepeatFromPrepare "Repeat Message State From Prepare Sleep state";
+CM_ SG_ 1025 NMMCU_RepeatFromNormal "Repeat Message State From Normal Operation state";
+CM_ SG_ 1025 NMMCU_RepeatFromReady "Repeat Message State From Ready Sleep state";
+CM_ SG_ 1025 NMMCU_NormalFromRepeat "Normal Operation state From Repeat Message State";
+CM_ SG_ 1025 NMMCU_NormalFromReady "Normal Operation state From Ready Sleep state";
+CM_ SG_ 1025 NMMCU_WakeSource "Wake Source";
+CM_ SG_ 1025 NMMCU_ActiveSource1 "The NM active sorce is KL15";
+CM_ SG_ 1025 NMMCU_ActiveSource2 "The NM active sorce is Diagnosis";
+CM_ SG_ 737 OBC_failerrSts "OBC fault level OBC失效故障等级";
+CM_ SG_ 737 OBC_EleccLckStt "E-lock status 电子锁状态";
+CM_ SG_ 737 OBC_CPStatus "CP status CP状态";
+CM_ SG_ 737 OBC_PwmDuty "PWM of CP CP的PWM占空比";
+CM_ SG_ 737 OBC_HV_DC_MAXPOWER "HV DC max power";
+CM_ SG_ 737 OBC_RollingCounter_2E1 "OBC报文计数器";
+CM_ SG_ 737 OBC_Checksum_2E1 "CRC8 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 738 OBC_AirTemp "空气温度";
+CM_ SG_ 738 OBC_M1Temp "M1板温度";
+CM_ SG_ 738 OBC_PFCTemp "PFC温度";
+CM_ SG_ 738 OBC_LLCTemp "LLC温度";
+CM_ SG_ 738 OBC_NTC2_Temp "NTC2 Temp";
+CM_ SG_ 738 OBC_NTC1_Temp "NTC1 Temp";
+CM_ SG_ 738 OBC_TempWater "OBC input water temperature";
+CM_ SG_ 739 OBC_AC_Current_L2 "L2 AC input current";
+CM_ SG_ 739 OBC_AC_Voltage_L2 "L2 AC input voltage";
+CM_ SG_ 739 OBC_AC_Current_L3 "L3 AC input current";
+CM_ SG_ 739 OBC_AC_Voltage_L3 "L3 AC input voltage";
+CM_ SG_ 739 OBC_NTC3_Temp "NTC3 Temp";
+CM_ SG_ 739 OBC_NTC4_Temp "NTC4 Temp";
+CM_ SG_ 742 OBC_Ecy "OBC效率";
+CM_ SG_ 742 OBC_HV_DC_MAXCurr "充电机最大允许充电电流";
+CM_ SG_ 742 OBC_HV_DC_MAXVolt "充电机最大允许充电电压";
+CM_ SG_ 742 OBC_HV_DC_Curr "充电电流";
+CM_ SG_ 742 OBC_HV_DC_Volt "充电电压";
+CM_ SG_ 742 S2_staus "S2 status";
+CM_ SG_ 742 OBC_RollingCounter_2E6 "OBC报文计数器";
+CM_ SG_ 742 OBC_Checksum_2E6 "CRC8 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 747 OBC_Status "OBC status 充电机状态";
+CM_ SG_ 747 OBC_WorkMode "OBC work mode";
+CM_ SG_ 747 OBC_ProductModel "the model of charger";
+CM_ SG_ 747 OBC_CC_connect_Status "CC status CC状态";
+CM_ SG_ 747 OBC_Discharging_MaxAC_Power "放电AC最大功率";
+CM_ SG_ 747 OBC_AC_Current "AC输入电流";
+CM_ SG_ 747 OBC_AC_Voltage "AC输入电压";
+CM_ SG_ 747 OBC_RollingCounter_2EB "OBC报文计数器";
+CM_ SG_ 747 OBC_Checksum_2EB "CRC8 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 749 OBC_BMS_2C7_Checksum "OBC CRC check error";
+CM_ SG_ 749 OBC_NTC1_wiredisconnect "NTC1 wire disconnect";
+CM_ SG_ 749 OBC_NTC2_wiredisconnect "NTC2 wire disconnect";
+CM_ SG_ 749 OBC_NTC1_TempOverTP "NTC1 Temp Over Temp";
+CM_ SG_ 749 OBC_NTC1_TempUTP "NTC1 Temp Under Temp";
+CM_ SG_ 749 OBC_NTC2_TempOverTP "NTC2 Temp Over Temp";
+CM_ SG_ 749 OBC_NTC2_TempUTP "NTC2 Temp Under Temp";
+CM_ SG_ 749 OBC_M1TempOverTP "M1 over temperature";
+CM_ SG_ 749 OBC_TempAirOTP "Air over temperature power off";
+CM_ SG_ 749 OBC_TempAirUTP "Air under temperature power off";
+CM_ SG_ 749 OBC_TempWaterOTP "Water over temperature power off";
+CM_ SG_ 749 OBC_PFCTempOverTP "PFC过温";
+CM_ SG_ 749 OBC_LLCOTP "LLC over temperature";
+CM_ SG_ 749 OBC_BMS_2C7_CANMissing "CAN missing";
+CM_ SG_ 749 OBC_SCICommunicate_Err "SCI communication error";
+CM_ SG_ 749 OBC_KL30UV "KL30 under voltage";
+CM_ SG_ 749 OBC_KL30OV "KL30 over voltage";
+CM_ SG_ 749 OBC_ElockLockErr "Elock lock error";
+CM_ SG_ 749 OBC_ElockUnLockErr "Elock unlock error";
+CM_ SG_ 749 OBC_NTC1_TempDeratingTP "NTC1 Derating Temp";
+CM_ SG_ 749 OBC_NTC2_TempDeratingTP "NTC2 Derating Temp";
+CM_ SG_ 749 OBC_TempInSenseErr "OBC Inside temprature sensor error";
+CM_ SG_ 749 OBC_TempM1Derate "M1 temperature derating";
+CM_ SG_ 749 OBC_TempPFCDerate "PFC temperature derating";
+CM_ SG_ 749 OBC_TempLLCDerate "LLC temperature derating";
+CM_ SG_ 749 OBC_TempWaterDerate "Water temperature derating";
+CM_ SG_ 749 OBC_Fault_time_Out "Recoverable failure timeout（2Min)";
+CM_ SG_ 749 OBC_CANBUS_OFF "BUSOFF error";
+CM_ SG_ 749 OBC_HV_DC_UV "Output Under voltage";
+CM_ SG_ 749 OBC_HV_DC_OV "Output over voltage";
+CM_ SG_ 749 OBC_HV_DC_Short "Output short";
+CM_ SG_ 749 OBC_AC_Short "Input short";
+CM_ SG_ 749 OBC_PFCOV "PFC over voltage";
+CM_ SG_ 749 OBC_PFCUnderVol "PFC under voltage";
+CM_ SG_ 749 OBC_SecSideSwOverCurrent "OBC second side software over current";
+CM_ SG_ 749 OBC_AC_OV "AC over voltage";
+CM_ SG_ 749 OBC_AC_OC "Ac over current";
+CM_ SG_ 749 OBC_AC_UV "AC under voltage";
+CM_ SG_ 749 OBC_PriySideHwOverCurrent "OBC primary side hardware over current";
+CM_ SG_ 749 OBC_SecSideHwOverCurrent "OBC second side hardware over current";
+CM_ SG_ 749 OBC_Acinvolt_time_out "AC Input voltage timeout";
+CM_ SG_ 749 OBC_Charge_EnTo "Charing enable timeout";
+CM_ SG_ 749 OBC_DisCharge_EnTo "Discharing enable timeout";
+CM_ SG_ 749 OBC_ChargerConn_Timeout "Charger Connect Time out";
+CM_ SG_ 749 OBC_ChargerS2ON_Timeout "Charger S2ON Time out";
+CM_ SG_ 749 OBC_V2V_CPDutyErr "V2V CP Duty Error";
+CM_ SG_ 749 OBC_ACout_time_out "AC out of Discharge time out";
+CM_ SG_ 749 OBC_HV_DC_OC "Output over current";
+CM_ SG_ 749 OBC_NTC3_wiredisconnect "NTC3 wire disconnect";
+CM_ SG_ 749 OBC_NTC3_TempOverTP "NTC3 Temp Over Temp";
+CM_ SG_ 749 OBC_NTC3_TempUTP "NTC3 Temp Under Temp";
+CM_ SG_ 749 OBC_NTC3_TempDeratingTP "NTC3 Derating Temp";
+CM_ SG_ 749 OBC_NTC4_wiredisconnect "NTC4 wire disconnect";
+CM_ SG_ 749 OBC_NTC4_TempOverTP "NTC4 Temp Over Temp";
+CM_ SG_ 749 OBC_NTC4_TempUTP "NTC4 Temp Under Temp";
+CM_ SG_ 749 OBC_NTC4_TempDeratingTP "NTC4 Derating Temp";
+CM_ SG_ 1027 NMOBC_SourceID "ECU Address";
+CM_ SG_ 1027 NMOBC_RepeatReq "Repeat Message State Request";
+CM_ SG_ 1027 NMOBC_Actwake "Active Wake Bit";
+CM_ SG_ 1027 NMOBC_RepeatFromSleep "Repeat Message State From Sleep state";
+CM_ SG_ 1027 NMOBC_RepeatFromPrepare "Repeat Message State From Prepare Sleep state";
+CM_ SG_ 1027 NMOBC_RepeatFromNormal "Repeat Message State From Normal Operation state";
+CM_ SG_ 1027 NMOBC_RepeatFromReady "Repeat Message State From Ready Sleep state";
+CM_ SG_ 1027 NMOBC_NormalFromRepeat "Normal Operation state From Repeat Message State";
+CM_ SG_ 1027 NMOBC_NormalFromReady "Normal Operation state From Ready Sleep state";
+CM_ SG_ 1027 NMOBC_WakeSource "Wake Source";
+CM_ SG_ 1027 NMOBC_ActiveSource1 "The NM active sorce is KL15";
+CM_ SG_ 1027 NMOBC_ActiveSource2 "The NM active sorce is Diagnosis";
+CM_ SG_ 1027 NMOBC_ActiveSource3 "ICS状态机非poweroff";
+CM_ SG_ 287 VCU_DC_IdcHvMaxSetP "Max setpoint of current HV 接收VCU发送的DC/DC高压输入电流最大设定值，用于DC/DC输入电流限制（高压电池能量管理）";
+CM_ SG_ 287 VCU_DC_IdcLvMaxSetP "Max Setpoint of current LV 接收VCU发送的DC/DC低压输出电流最大设定值，用于DC/DC输出电流限制";
+CM_ SG_ 287 VCU_DC_UdcLvSetP "Setpoint of voltage LV DCDC 低压侧电压输出设定值";
+CM_ SG_ 287 VCU_DC_stModereq "stMode of DCDC request  DCDC模式请求";
+CM_ SG_ 287 VCU_RollingCounter_11F "VCU_11F报文计数器";
+CM_ SG_ 287 VCU_Checksum_11F "VCU_11F校验和 The checksum is build based on SAE J1850 for byte 0 to byte 6. Polynom: x8 + x4 + x3 + x2 + 1 (0x1D)";
+CM_ SG_ 675 VCU_ChargeLoadPower "充电工况负载功率请求";
+CM_ SG_ 675 VCU_BMSPreThemalPermit "VCU预加热/冷却信号允许";
+CM_ SG_ 675 VCU_OBCDischgPermitPower "OBC V2X discharge permit power";
+CM_ SG_ 677 VCU_ElecModFlg "Vehicle Power mode 车辆电模式";
+CM_ SG_ 679 VCU_FaultLvl "Vehicle fault level  整车故障等级";
+CM_ SG_ 679 VCU_AGSActPosition "AGS开度";
+CM_ SG_ 679 VCU_DrvPumpDC "驱动水泵占空比";
+CM_ SG_ 1029 NMVCU_SourceID "ECU Address";
+CM_ SG_ 1029 NMVCU_RepeatReq "Repeat Message State Request";
+CM_ SG_ 1029 NMVCU_Actwake "Active Wake Bit";
+CM_ SG_ 1029 NMVCU_RepeatFromSleep "Repeat Message State From Sleep state";
+CM_ SG_ 1029 NMVCU_RepeatFromPrepare "Repeat Message State From Prepare Sleep state";
+CM_ SG_ 1029 NMVCU_RepeatFromNormal "Repeat Message State From Normal Operation state";
+CM_ SG_ 1029 NMVCU_RepeatFromReady "Repeat Message State From Ready Sleep state";
+CM_ SG_ 1029 NMVCU_NormalFromRepeat "Normal Operation state From Repeat Message State";
+CM_ SG_ 1029 NMVCU_NormalFromReady "Normal Operation state From Ready Sleep state";
+CM_ SG_ 1029 NMVCU_WakeSource "Wake Source";
+CM_ SG_ 1029 NMVCU_ActiveSource1 "The NM active sorce is KL15";
+CM_ SG_ 1029 NMVCU_ActiveSource2 "The NM active sorce is Diagnosis";
+CM_ SG_ 1029 NMVCU_ActiveSource3 "The NM active sorce is Charge wakeup";
+CM_ SG_ 1029 NMVCU_ActiveSource4 "The NM active sorce is AfterRun";
+CM_ SG_ 405 IVI_Elock_open_Req "慢充电子锁解锁请求";
+CM_ SG_ 381 BCM_PwrDistributionSts "电源模式";
+CM_ SG_ 381 BCM_Elock_open_Req "慢充电子锁解锁请求";
+CM_ SG_ 895 IVI_YearSet "年";
+CM_ SG_ 895 IVI_MonthSet "月";
+CM_ SG_ 895 IVI_DaySet "日";
+CM_ SG_ 895 IVI_HourSet "时";
+CM_ SG_ 895 IVI_MinuteSet "分";
+CM_ SG_ 895 IVI_SecondSet "秒";
+CM_ SG_ 653 TBOX_OTAmodeONReq "OTA Mode ON request";
+CM_ SG_ 653 TBOX_OTAmodeOFFReq "OTA Mode OFF request";
+CM_ SG_ 1024 NMGW_SourceID "ECU Address";
+CM_ SG_ 1024 NMGW_RepeatReq "Repeat Message State Request";
+CM_ SG_ 1024 NMGW_Actwake "Active Wake Bit";
+CM_ SG_ 1024 NMGW_RepeatFromSleep "Repeat Message State From Sleep state";
+CM_ SG_ 1024 NMGW_RepeatFromPrepare "Repeat Message State From Prepare Sleep state";
+CM_ SG_ 1024 NMGW_RepeatFromNormal "Repeat Message State From Normal Operation state";
+CM_ SG_ 1024 NMGW_RepeatFromReady "Repeat Message State From Ready Sleep state";
+CM_ SG_ 1024 NMGW_NormalFromRepeat "Normal Operation state From Repeat Message State";
+CM_ SG_ 1024 NMGW_NormalFromReady "Normal Operation state From Ready Sleep state";
+CM_ SG_ 1024 NMGW_WakeSource "Wake Source";
+CM_ SG_ 1024 NMGW_ActiveSource1 "The NM active sorce is KL15";
+CM_ SG_ 1024 NMGW_ActiveSource2 "The NM active sorce is Diagnosis";
+CM_ SG_ 1024 NMGW_ActiveSource3 "The NM active sorce is no Timeout";
+CM_ SG_ 1024 NMGW_ActiveSource4 "The NM active sorce is active line";
+CM_ SG_ 1024 NMGW_WakeSource_CAN "CAN name that wake up GW";
+CM_ SG_ 938 GW_VIN_Value_1 "VIN码:用于传输VIN码数据 7N+1";
+CM_ SG_ 938 GW_VIN_Value_2 "VIN码:用于传输VIN码数据 7N+2";
+CM_ SG_ 938 GW_VIN_Value_3 "VIN码:用于传输VIN码数据 7N+3";
+CM_ SG_ 938 GW_VIN_Value_4 "VIN码:用于传输VIN码数据 7N+4";
+CM_ SG_ 938 GW_VIN_Value_5 "VIN码:用于传输VIN码数据 7N+5";
+CM_ SG_ 938 GW_VIN_Value_6 "VIN码:用于传输VIN码数据 7N+6";
+CM_ SG_ 938 GW_VIN_Value_7 "VIN码:用于传输VIN码数据 7N+7";
+CM_ SG_ 938 GW_VINFrameNumber "VIN帧序号:用于标记发送报文帧序号N";
+CM_ SG_ 685 ESP_VehicleSpeedValid "The_vehicle_speed_valid";
+CM_ SG_ 685 ESP_VehicleSpeed "The_vehicle_speed_data";
+CM_ SG_ 735 IP_TotalOdometer "Total Odometer 累计里程";
+CM_ SG_ 735 IP_OdometerSts "Total Odometer sts 累计里程有效标志位";
+
+VAL_ 1026 NMBMS_RepeatReq 0 "No requset" 1 "Repeat Message State Request" ;
+VAL_ 1026 NMBMS_Actwake 0 "Node has not woken up the network (passive wakeup)" 1 "Node has woken up the network (active Wakeup)" ;
+VAL_ 1026 NMBMS_RepeatFromSleep 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_RepeatFromPrepare 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_RepeatFromNormal 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_RepeatFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_NormalFromRepeat 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_NormalFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_WakeSource 1 "Can wakeup" 2 "KL l5" 3 "预约充电唤醒" 4 "Apluswakeup" 5 "OBCwakeup" 6 "RTCwakeup" 7 "TPLwakeup" ;
+VAL_ 1026 NMBMS_ActiveSource1 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_ActiveSource2 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_ActiveSource3 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_ActiveSource4 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_ActiveSource5 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_ActiveSource6 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_ActiveSource7 0 "not occur" 1 "occur" ;
+VAL_ 1026 NMBMS_ActiveSource8 0 "Not Occur" 1 "Occur" ;
+VAL_ 157 BMS_HVConnectStt 0 "Disconnect" 1 "Connecting" 2 "Connect" 3 "Unknown" ;
+VAL_ 711 BMS_OnChrgCmd 0 "Charge_NoReq" 1 "Charge_Reqt" ;
+VAL_ 711 BMS_ObcReadyReq 0 "无ready请求" 1 "有ready请求" ;
+VAL_ 711 BMS_OnDischrgCmd 0 "DisCharge_NoReq" 1 "DisCharge_Reqt" ;
+VAL_ 714 BMS_ElockRequest 0 "No request" 1 "ELock open request" 2 "ELock close request" 3 "reserved" ;
+VAL_ 718 BMS_Batt_Full 0 "Not full" 1 "Full" ;
+VAL_ 718 BMS_DCChgConnectSt 0 "Disconnect" 1 "Connect" 2 "Fault" ;
+VAL_ 312 DCDC_stMode 0 "Standby" 1 "Buck" 3 "UdcLnkDischarge" 5 "Failure" ;
+VAL_ 312 DCDC_OTAModeSts 0 "Invalid" 1 "Valid" ;
+VAL_ 690 DCDC_WorkMode 0 "Not working" 1 "ACLV(charging）" 2 "HVLV（driving）" 3 "HVLV(V2X)" ;
+VAL_ 694 DCDC_ErrLevel 0 "没有故障" 1 "有故障DFC指示,但是不进行任何响应" 2 "Derating限电流,降功率,故障条件不满足时直接修复" 3 "故障,禁止输出电流,故障条件不满足时直接修复" 4 "故障,禁止输出电流,故障条件不满足时不会直接修复,需要reset KL15才可修复" ;
+VAL_ 694 DCDC_bErrShtOff 0 "normal" 1 "failure" ;
+VAL_ 877 DCDC_VCU11F_CanMsgTime_Out 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_VCU11F_ChecksumErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_VCU11FCanMsg_LenErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_CanMsgEM_InternalUART1 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_CanMsgEM_InternalUART2 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_BnetOpen 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_BnetShort 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_BuckMod 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_CanBusOff 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_VCU11F_CANMissing 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_MaxRstRea 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempM1OTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempWaterOTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempPFCOTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempLLCOTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempAirOTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempInSenseErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_UBnetUnder 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_UBnetOver 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_UBnetSpOutdRng 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_LVVolFdErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_ULnkOver 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_ULnkUnder 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_OutputOCP 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_LVCurrFdErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_PFCOverVol 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_LVNoOutputErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempWaterDerating 0 "FALSE" 1 "TRUE" ;
+VAL_ 877 DCDC_TempMOS3Derating 0 "FALSE" 1 "TRUE" ;
+VAL_ 1028 NMEGS_RepeatReq 0 "No requset" 1 "Repeat Message State Request" ;
+VAL_ 1028 NMEGS_Actwake 0 "Node has not woken up the network (passive wakeup)" 1 "Node has woken up the network (active Wakeup)" ;
+VAL_ 1028 NMEGS_RepeatFromSleep 0 "not occur" 1 "occur" ;
+VAL_ 1028 NMEGS_RepeatFromPrepare 0 "not occur" 1 "occur" ;
+VAL_ 1028 NMEGS_RepeatFromNormal 0 "not occur" 1 "occur" ;
+VAL_ 1028 NMEGS_RepeatFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1028 NMEGS_NormalFromRepeat 0 "not occur" 1 "occur" ;
+VAL_ 1028 NMEGS_NormalFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1028 NMEGS_WakeSource 1 "Can wakeup" 2 "KL l5" ;
+VAL_ 1028 NMEGS_ActiveSource1 0 "not occur" 1 "occur" ;
+VAL_ 1028 NMEGS_ActiveSource2 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_RepeatReq 0 "No requset" 1 "Repeat Message State Request" ;
+VAL_ 1025 NMMCU_Actwake 0 "Node has not woken up the network (passive wakeup)" 1 "Node has woken up the network (active Wakeup)" ;
+VAL_ 1025 NMMCU_RepeatFromSleep 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_RepeatFromPrepare 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_RepeatFromNormal 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_RepeatFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_NormalFromRepeat 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_NormalFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_WakeSource 1 "Can wakeup" 2 "KL l5" ;
+VAL_ 1025 NMMCU_ActiveSource1 0 "not occur" 1 "occur" ;
+VAL_ 1025 NMMCU_ActiveSource2 0 "not occur" 1 "occur" ;
+VAL_ 737 OBC_failerrSts 0 "正常" 1 "0x1" 2 "0x2" 3 "0x3" 4 "0x4" ;
+VAL_ 737 OBC_EleccLckStt 0 "reserved" 1 "Lock" 2 "Unlock" ;
+VAL_ 737 OBC_CPStatus 0 "CP 9V" 1 "CP 0V" 2 "CP 9V PWM" 3 "CP 6V" 4 "CP 6V PWM" 5 "CP 12V" 6 "CP 12V PWM" 7 "CP out of range" ;
+VAL_ 742 S2_staus 0 "S2 Off" 1 "S2 On" ;
+VAL_ 747 OBC_Status 0 "ini" 1 "ready" 2 "CHARGING" 3 "V2L Discharging" 4 "Hold temp" 5 "V2V Discharging" 6 "Drating" 7 "Stop" 8 "PRE-HEATing" 9 "POWER OFF" 10 "FAULT" ;
+VAL_ 747 OBC_WorkMode 0 "Not working" 1 "Single Phase charging" 2 "Three Phase charing" 3 "Reserved" ;
+VAL_ 747 OBC_ProductModel 0 "0x0" 1 "0x1" 2 "0x2" 3 "wireless" ;
+VAL_ 747 OBC_CC_connect_Status 0 "Init" 1 "DisConnect" 2 "HalfConnect" 3 "ChgConnect_10A(1.5kΩ)" 4 "ChgConnect_16A(680Ω）" 5 "ChgConnect_32A（220Ω）" 6 "DisChgConnect_10A(2.7kΩ)" 7 "DisChgConnect_16A(2kΩ)" 8 "DisChgConnect_32A(1kΩ)" 9 "Reserved" ;
+VAL_ 749 OBC_BMS_2C7_Checksum 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC1_wiredisconnect 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC2_wiredisconnect 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC1_TempOverTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC1_TempUTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC2_TempOverTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC2_TempUTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_M1TempOverTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempAirOTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempAirUTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempWaterOTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_PFCTempOverTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_LLCOTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_BMS_2C7_CANMissing 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_SCICommunicate_Err 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_KL30UV 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_KL30OV 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_ElockLockErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_ElockUnLockErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC1_TempDeratingTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC2_TempDeratingTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempInSenseErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempM1Derate 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempPFCDerate 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempLLCDerate 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_TempWaterDerate 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_Fault_time_Out 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_CANBUS_OFF 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_HV_DC_UV 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_HV_DC_OV 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_HV_DC_Short 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_AC_Short 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_PFCOV 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_PFCUnderVol 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_SecSideSwOverCurrent 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_AC_OV 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_AC_OC 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_AC_UV 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_PriySideHwOverCurrent 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_SecSideHwOverCurrent 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_Acinvolt_time_out 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_Charge_EnTo 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_DisCharge_EnTo 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_ChargerConn_Timeout 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_ChargerS2ON_Timeout 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_V2V_CPDutyErr 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_ACout_time_out 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_HV_DC_OC 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC3_wiredisconnect 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC3_TempOverTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC3_TempUTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC3_TempDeratingTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC4_wiredisconnect 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC4_TempOverTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC4_TempUTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 749 OBC_NTC4_TempDeratingTP 0 "FALSE" 1 "TRUE" ;
+VAL_ 1027 NMOBC_RepeatReq 0 "No requset" 1 "Repeat Message State Request" ;
+VAL_ 1027 NMOBC_Actwake 0 "Node has not woken up the network (passive wakeup)" 1 "Node has woken up the network (active Wakeup)" ;
+VAL_ 1027 NMOBC_RepeatFromSleep 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_RepeatFromPrepare 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_RepeatFromNormal 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_RepeatFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_NormalFromRepeat 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_NormalFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_WakeSource 0 "0x0" 1 "Can wakeup" 2 "KL l5" 3 "CC" 4 "CP" ;
+VAL_ 1027 NMOBC_ActiveSource1 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_ActiveSource2 0 "not occur" 1 "occur" ;
+VAL_ 1027 NMOBC_ActiveSource3 0 "not occur" 1 "occur" ;
+VAL_ 287 VCU_DC_stModereq 0 "Standby" 1 "Buck" 2 "Discharge" ;
+VAL_ 675 VCU_BMSPreThemalPermit 0 "Default" 1 "PreHeatPermit" 2 "HoldtempPermit" ;
+VAL_ 677 VCU_ElecModFlg 0 "init" 1 "LV on" 2 "IGN HV ON" 3 "Vehicle ready" 4 "Slow charge HV ON" 5 "Fast charge HV ON" 6 "Afterrun" 7 "Other HV ON" ;
+VAL_ 679 VCU_FaultLvl 0 "ErrLevel0" 1 "ErrLevel1" 2 "ErrLevel2" 3 "ErrLevel3" 4 "ErrLevel4" ;
+VAL_ 1029 NMVCU_RepeatReq 0 "No requset" 1 "Repeat Message State Request" ;
+VAL_ 1029 NMVCU_Actwake 0 "Node has not woken up the network (passive wakeup)" 1 "Node has woken up the network (active Wakeup)" ;
+VAL_ 1029 NMVCU_RepeatFromSleep 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_RepeatFromPrepare 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_RepeatFromNormal 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_RepeatFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_NormalFromRepeat 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_NormalFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_WakeSource 1 "CAN wakeup" 2 "KL l5" 4 "Charge wakeup" ;
+VAL_ 1029 NMVCU_ActiveSource1 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_ActiveSource2 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_ActiveSource3 0 "not occur" 1 "occur" ;
+VAL_ 1029 NMVCU_ActiveSource4 0 "not occur" 1 "occur" ;
+VAL_ 405 IVI_Elock_open_Req 0 "No request" 1 "ELock open request" 2 "ELock close request" 3 "reserved" ;
+VAL_ 381 BCM_PwrDistributionSts 0 "init _x000D_" 1 "Off _x000D_" 2 "ACC(reserved )_x000D_" 3 "ON _x000D_" 4 "Crank(reserved )_x000D_" 5 "Ready(reserved)" ;
+VAL_ 381 BCM_Elock_open_Req 0 "Norequest _x000D_" 1 "ELockopenrequest" ;
+VAL_ 653 TBOX_OTAmodeONReq 0 "No request" 1 "Request" ;
+VAL_ 653 TBOX_OTAmodeOFFReq 0 "No request" 1 "Request" ;
+VAL_ 1024 NMGW_RepeatReq 0 "No requset" 1 "Repeat Message State Request" ;
+VAL_ 1024 NMGW_Actwake 0 "Node has not woken up the network (passive wakeup)" 1 "Node has woken up the network (active Wakeup)" ;
+VAL_ 1024 NMGW_RepeatFromSleep 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_RepeatFromPrepare 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_RepeatFromNormal 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_RepeatFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_NormalFromRepeat 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_NormalFromReady 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_WakeSource 1 "Can wakeup" 2 "KL l5" 3 "Diagonse" ;
+VAL_ 1024 NMGW_ActiveSource1 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_ActiveSource2 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_ActiveSource3 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_ActiveSource4 0 "not occur" 1 "occur" ;
+VAL_ 1024 NMGW_WakeSource_CAN 0 "Diagnose CAN" 1 "body CAN" 2 "PT CAN" 3 "Chassis CAN" 4 "ADAS CAN" 5 "INFO CAN" 6 "TBOX CAN" ;
+VAL_ 685 ESP_VehicleSpeedValid 0 "Valid _x000D_" 1 "Invalid" ;
+VAL_ 735 IP_OdometerSts 0 "Invalid" 1 "Valid" ;
