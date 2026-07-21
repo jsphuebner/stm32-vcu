@@ -54,9 +54,9 @@ inline uint32_t UnpackMotorolaLsb(const uint8_t *bytes, int startBit,
   return value;
 }
 
-// SAE J1850 CRC-8, polynomial 0x1D, init 0xFF, final xor 0xFF.
-inline uint8_t Crc8SaeJ1850(const uint8_t *data, int length) {
-  uint8_t crc = 0xFF;
+// SAE J1850 CRC-8 variant with polynomial 0x1D, init 0x00, final xor 0x00.
+inline uint8_t Crc8SaeJ1850Zero(const uint8_t *data, int length) {
+  uint8_t crc = 0x00;
 
   for (int i = 0; i < length; i++) {
     crc ^= data[i];
@@ -69,12 +69,12 @@ inline uint8_t Crc8SaeJ1850(const uint8_t *data, int length) {
     }
   }
 
-  return crc ^ 0xFF;
+  return crc;
 }
 
 inline void FinalizeE2EFrame(uint8_t *bytes, uint8_t counter, int counterBit) {
   PackMotorolaLsb(bytes, counterBit, 4, counter & 0xF);
-  bytes[0] = Crc8SaeJ1850(bytes + 1, 7);
+  bytes[0] = Crc8SaeJ1850Zero(bytes + 1, 7);
 }
 
 } // namespace C5PTECAN
