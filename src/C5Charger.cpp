@@ -143,14 +143,14 @@ void C5Charger::Send0x304() {
       std::min(0x3FF, std::max(0, (int)(actualChargePower / 100.0f + 0.5f)));
   const uint32_t chargeVoltageRaw = std::min(
       0x1FFF, std::max(0, (int)(Param::GetFloat(Param::Voltspnt) * 10.0f + 0.5f)));
-  const uint32_t chargeCurrentRaw = std::min(
+  const uint32_t chargeCurrentReqRaw = std::min(
       0x1FFF,
       std::max(0, (int)((MaxChargeCurrentAmps() + 700.0f) * 10.0f +
                         0.5f))); // protocol offset is -700 A
 
   C5PTECAN::PackMotorolaLsb(bytes, 18, 10, actualChargePowerRaw);
   C5PTECAN::PackMotorolaLsb(bytes, 37, 13, chargeVoltageRaw);
-  C5PTECAN::PackMotorolaLsb(bytes, 40, 13, chargeCurrentRaw);
+  C5PTECAN::PackMotorolaLsb(bytes, 40, 13, chargeCurrentReqRaw);
   C5PTECAN::PackMotorolaLsb(bytes, 56, 1, chargeCommand ? 1 : 0);
   C5PTECAN::PackMotorolaLsb(bytes, 57, 1, 0);
   C5PTECAN::PackMotorolaLsb(bytes, 58, 1, chargeCommand ? 1 : 0);
@@ -262,6 +262,8 @@ void C5Charger::DecodeCAN(int id, uint32_t data[2]) {
 
     if (Param::GetInt(Param::ShuntType) == 0 &&
         Param::GetInt(Param::Inverter) != InvModes::Leaf_Gen1) {
+      // Only backfill HV voltage/current from the charger when no dedicated
+      // shunt is configured and the Leaf inverter is not already providing it.
       Param::SetFloat(Param::udc, hvVolts);
       Param::SetFloat(Param::idc, std::max(0.0f, hvCurrent));
     }

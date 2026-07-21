@@ -15,9 +15,10 @@
 #include <stdint.h>
 
 namespace C5PTECAN {
+constexpr int BIT_INDEX_MASK = 0x7;
 
 inline int NextMotorolaLsbBit(int bit) {
-  return (bit & 0x7) == 0x7 ? bit - 15 : bit + 1;
+  return (bit & BIT_INDEX_MASK) == BIT_INDEX_MASK ? bit - 15 : bit + 1;
 }
 
 inline void PackMotorolaLsb(uint8_t *bytes, int startBit, int length,
@@ -25,7 +26,7 @@ inline void PackMotorolaLsb(uint8_t *bytes, int startBit, int length,
   int bit = startBit;
 
   for (int i = 0; i < length; i++) {
-    const uint8_t mask = 1U << (bit & 0x7);
+    const uint8_t mask = 1U << (bit & BIT_INDEX_MASK);
 
     if (value & (1UL << i))
       bytes[bit / 8] |= mask;
@@ -42,7 +43,7 @@ inline uint32_t UnpackMotorolaLsb(const uint8_t *bytes, int startBit,
   int bit = startBit;
 
   for (int i = 0; i < length; i++) {
-    const uint8_t mask = 1U << (bit & 0x7);
+    const uint8_t mask = 1U << (bit & BIT_INDEX_MASK);
 
     if (bytes[bit / 8] & mask)
       value |= 1UL << i;
