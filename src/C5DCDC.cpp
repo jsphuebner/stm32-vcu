@@ -14,6 +14,10 @@
 #include "params.h"
 #include <algorithm>
 
+namespace {
+constexpr int MODE_REQUEST_START_BIT = 9;
+}
+
 void C5DCDC::SetCanInterface(CanHardware *c) {
   can = c;
   can->RegisterUserMessage(0x105);
@@ -44,7 +48,7 @@ void C5DCDC::Send0x11A() {
       opmode == MOD_PCHFAIL || opmode == MOD_PRECHARGE)
     modeRequest = 1;
 
-  C5PTECAN::PackMotorolaLsb(bytes, 9, 3, modeRequest);
+  C5PTECAN::PackMotorolaLsb(bytes, MODE_REQUEST_START_BIT, 3, modeRequest);
   C5PTECAN::PackMotorolaLsb(bytes, 29, 11, 0x7FF);
   C5PTECAN::PackMotorolaLsb(bytes, 33, 11, 0x7FF);
   C5PTECAN::PackMotorolaLsb(

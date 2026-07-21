@@ -25,6 +25,8 @@ constexpr uint8_t VCU_MODE_HV_ON = 0x2;
 constexpr uint8_t VCU_MODE_READY = 0x3;
 constexpr uint8_t VCU_MODE_SLOW_CHARGE = 0x4;
 constexpr uint8_t VCU_MODE_PREHEAT = 0x9;
+constexpr int SOC_FULL_THRESHOLD = 99;
+constexpr float OBC_OUTPUT_CURRENT_OFFSET = -70.0f;
 } // namespace
 
 void C5Charger::SetCanInterface(CanHardware *c) {
@@ -180,7 +182,8 @@ void C5Charger::Send0x306() {
 
 void C5Charger::Send0x308() {
   uint8_t bytes[8] = {0};
-  const uint32_t socFull = Param::GetInt(Param::SOC) >= 99 ? 1 : 0;
+  const uint32_t socFull =
+      Param::GetInt(Param::SOC) >= SOC_FULL_THRESHOLD ? 1 : 0;
 
   C5PTECAN::PackMotorolaLsb(bytes, 26, 1, socFull);
   C5PTECAN::PackMotorolaLsb(bytes, 48, 2, 0);
@@ -258,7 +261,8 @@ void C5Charger::DecodeCAN(int id, uint32_t data[2]) {
   case 0x103: {
     const float hvVolts = C5PTECAN::UnpackMotorolaLsb(bytes, 24, 14) * 0.1f;
     const float hvCurrent =
-        C5PTECAN::UnpackMotorolaLsb(bytes, 50, 11) * 0.1f - 70.0f;
+        C5PTECAN::UnpackMotorolaLsb(bytes, 50, 11) * 0.1f +
+        OBC_OUTPUT_CURRENT_OFFSET;
 
     if (Param::GetInt(Param::ShuntType) == 0 &&
         Param::GetInt(Param::Inverter) != InvModes::Leaf_Gen1) {
