@@ -145,7 +145,8 @@ void C5Charger::Send0x304() {
       0x1FFF, std::max(0, (int)(Param::GetFloat(Param::Voltspnt) * 10.0f + 0.5f)));
   const uint32_t chargeCurrentRaw = std::min(
       0x1FFF,
-      std::max(0, (int)((MaxChargeCurrentAmps() + 700.0f) * 10.0f + 0.5f)));
+      std::max(0, (int)((MaxChargeCurrentAmps() + 700.0f) * 10.0f +
+                        0.5f))); // protocol offset is -700 A
 
   C5PTECAN::PackMotorolaLsb(bytes, 18, 10, actualChargePowerRaw);
   C5PTECAN::PackMotorolaLsb(bytes, 37, 13, chargeVoltageRaw);

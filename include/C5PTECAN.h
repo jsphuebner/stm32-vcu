@@ -53,6 +53,7 @@ inline uint32_t UnpackMotorolaLsb(const uint8_t *bytes, int startBit,
   return value;
 }
 
+// SAE J1850 CRC-8, polynomial 0x1D, init 0xFF, final xor 0xFF.
 inline uint8_t Crc8SaeJ1850(const uint8_t *data, int length) {
   uint8_t crc = 0xFF;
 
