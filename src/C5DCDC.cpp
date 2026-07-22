@@ -44,13 +44,12 @@ void C5DCDC::Send0x11A() {
   const int opmode = Param::GetInt(Param::opmode);
   uint8_t modeRequest = 0;
 
-  if (opmode == MOD_RUN || opmode == MOD_CHARGE || opmode == MOD_PREHEAT ||
-      opmode == MOD_PCHFAIL || opmode == MOD_PRECHARGE)
+  if (opmode == MOD_RUN || opmode == MOD_CHARGE || opmode == MOD_PREHEAT)
     modeRequest = 1;
 
   C5PTECAN::PackMotorolaLsb(bytes, MODE_REQUEST_START_BIT, 3, modeRequest);
-  C5PTECAN::PackMotorolaLsb(bytes, 29, 11, 0x7FF);
-  C5PTECAN::PackMotorolaLsb(bytes, 33, 11, 0x7FF);
+  C5PTECAN::PackMotorolaLsb(bytes, 29, 11, 0x6FF);
+  C5PTECAN::PackMotorolaLsb(bytes, 33, 11, 0x6FF);
   C5PTECAN::PackMotorolaLsb(
       bytes, 40, 9,
       std::min(0x1FF, std::max(0, (int)(Param::GetFloat(Param::DCSetPnt) * 8.0f +
