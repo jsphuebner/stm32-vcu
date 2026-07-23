@@ -35,6 +35,7 @@
 #define PKP_TPDO1 0x195 // button states from panel
 #define PKP_RPDO1 0x215 // LED control to panel
 #define PKP_NODE_ID 0x15
+#define BUTTON_MSG_TIMEOUT_CYCLES 3 // 300 ms with Task100Ms period
 
 // LED bytes
 #define LED_RED 0
@@ -104,7 +105,7 @@ void PKP2300_Lever::DecodeCAN(int id, uint32_t *data) {
 
   uint8_t *bytes = (uint8_t *)data;
   uint8_t buttons = bytes[0];
-  buttonMsgTimeout = 3;
+  buttonMsgTimeout = BUTTON_MSG_TIMEOUT_CYCLES;
   // Only allow changing away from PARK if brake pedal is pressed
   bool allowGearChange = gear != PARK || Param::GetBool(Param::din_brake);
 
@@ -149,7 +150,7 @@ void PKP2300_Lever::Task100Ms() {
 
   if (blinkDivider == 0) {
     blinkState = !blinkState;
-    // Task100Ms runs at 10 Hz; divider=4 means 5 total cycles per toggle (500 ms).
+    // Task100Ms runs at 10 Hz; divider=4 means 500 ms per half-cycle (1 Hz blink).
     blinkDivider = 4;
   } else {
     blinkDivider--;
