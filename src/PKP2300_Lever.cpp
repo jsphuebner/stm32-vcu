@@ -148,22 +148,25 @@ void PKP2300_Lever::Task100Ms() {
 
   if (blinkDivider == 0) {
     blinkState = !blinkState;
-    blinkDivider = 5;
+    blinkDivider = 4;
+  } else {
+    blinkDivider--;
   }
-  blinkDivider--;
 
   if (buttonMsgTimeout > 0) {
     buttonMsgTimeout--;
   } else {
+    // CANopen NMT Start Remote Node: byte0=0x01 (start), byte1=0x15 (node ID)
     uint8_t nmtStart[8] = {1, 0x15, 0, 0, 0, 0, 0, 0};
     can->Send(0x000, (uint32_t *)nmtStart, 8);
   }
 
   int selectedDir = Param::GetInt(Param::dir);
   if (opmode == MOD_RUN && GearToParamDir(gear) != selectedDir) {
-    rejectedDirection = gear;
+    Shifter::Sgear requestedGear = gear;
     flashRejectedDirection = true;
     gear = ParamDirToGear(selectedDir);
+    rejectedDirection = requestedGear;
   }
 
   SendLEDs();
