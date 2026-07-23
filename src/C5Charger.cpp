@@ -254,21 +254,23 @@ void C5Charger::DecodeCAN(int id, uint32_t data[2]) {
                     std::max(acVoltageL1, std::max(acVoltageL2, acVoltageL3)));
     break;
   }
-    /*  case 0x103: {
-        const float hvVolts = C5PTECAN::UnpackMotorolaLsb(bytes, 24, 14) * 0.1f;
-        const float hvCurrent =
-            C5PTECAN::UnpackMotorolaLsb(bytes, 50, 11) * 0.1f +
-            OBC_OUTPUT_CURRENT_OFFSET;
+#if 0
+  case 0x103: {
+    const float hvVolts = C5PTECAN::UnpackMotorolaLsb(bytes, 24, 14) * 0.1f;
+    const float hvCurrent =
+        C5PTECAN::UnpackMotorolaLsb(bytes, 50, 11) * 0.1f +
+        OBC_OUTPUT_CURRENT_OFFSET;
 
-        if (Param::GetInt(Param::ShuntType) == 0 &&
-            Param::GetInt(Param::Inverter) != InvModes::Leaf_Gen1) {
-          // Only backfill HV voltage/current from the charger when no dedicated
-          // shunt is configured and the Leaf inverter is not already providing
-      it. Param::SetFloat(Param::udc, hvVolts); Param::SetFloat(Param::idc,
-      std::max(0.0f, hvCurrent));
-        }
-        break;
-      }*/
+    if (Param::GetInt(Param::ShuntType) == 0 &&
+        Param::GetInt(Param::Inverter) != InvModes::Leaf_Gen1) {
+      // Only backfill HV voltage/current from the charger when no dedicated
+      // shunt is configured and the Leaf inverter is not already providing it.
+      Param::SetFloat(Param::udc, hvVolts);
+      Param::SetFloat(Param::idc, std::max(0.0f, hvCurrent));
+    }
+    break;
+  }
+#endif
   case 0x310: {
     const float wtrInlet = C5PTECAN::UnpackMotorolaLsb(bytes, 48, 8) - 40.0f;
     maxChargeTemp = wtrInlet;
