@@ -148,6 +148,7 @@ void PKP2300_Lever::Task100Ms() {
 
   if (blinkDivider == 0) {
     blinkState = !blinkState;
+    // Task100Ms runs at 10 Hz, so 5 cycles per toggle gives a 1 Hz blink period.
     blinkDivider = 4;
   } else {
     blinkDivider--;
@@ -156,6 +157,7 @@ void PKP2300_Lever::Task100Ms() {
   if (buttonMsgTimeout > 0) {
     buttonMsgTimeout--;
   } else {
+    // Sent continuously while TPDO1 is missing to recover panel state after loss.
     // CANopen NMT Start Remote Node: byte0=0x01 (start), byte1=0x15 (node ID)
     uint8_t nmtStart[8] = {1, 0x15, 0, 0, 0, 0, 0, 0};
     can->Send(0x000, (uint32_t *)nmtStart, 8);
@@ -163,6 +165,8 @@ void PKP2300_Lever::Task100Ms() {
 
   int selectedDir = Param::GetInt(Param::dir);
   if (opmode == MOD_RUN && GearToParamDir(gear) != selectedDir) {
+    // Show one 100 ms red flash for a rejected user request, then resync to
+    // Param::dir for the next SelectDirection cycle.
     Shifter::Sgear requestedGear = gear;
     flashRejectedDirection = true;
     gear = ParamDirToGear(selectedDir);
