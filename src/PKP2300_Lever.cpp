@@ -34,6 +34,7 @@
 // CANOpen IDs for node 1
 #define PKP_TPDO1 0x195 // button states from panel
 #define PKP_RPDO1 0x215 // LED control to panel
+#define PKP_NODE_ID 0x15
 
 // LED bytes
 #define LED_RED 0
@@ -148,7 +149,7 @@ void PKP2300_Lever::Task100Ms() {
 
   if (blinkDivider == 0) {
     blinkState = !blinkState;
-    // Task100Ms runs at 10 Hz, so 5 cycles per toggle gives a 1 Hz blink period.
+    // Task100Ms runs at 10 Hz; divider=4 means 5 total cycles per toggle (500 ms).
     blinkDivider = 4;
   } else {
     blinkDivider--;
@@ -158,8 +159,8 @@ void PKP2300_Lever::Task100Ms() {
     buttonMsgTimeout--;
   } else {
     // Sent continuously while TPDO1 is missing to recover panel state after loss.
-    // CANopen NMT Start Remote Node: byte0=0x01 (start), byte1=0x15 (node ID)
-    uint8_t nmtStart[8] = {1, 0x15, 0, 0, 0, 0, 0, 0};
+    // CANopen NMT Start Remote Node: byte0=0x01 (start), byte1=node ID.
+    uint8_t nmtStart[8] = {1, PKP_NODE_ID, 0, 0, 0, 0, 0, 0};
     can->Send(0x000, (uint32_t *)nmtStart, 8);
   }
 
