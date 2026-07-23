@@ -174,7 +174,8 @@ float GetUserThrottleCommand() {
   } /* else {
     Throttle::noregenreq = 0;
   }
-  Temporary solution so that the Gear Lever can disable regen when traditional pin is disabled
+  Temporary solution so that the Gear Lever can disable regen when traditional
+  pin is disabled
   */
 
   // calculate the throttle depending on the channel we've decided to use

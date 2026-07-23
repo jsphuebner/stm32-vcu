@@ -150,7 +150,8 @@ void PKP2300_Lever::Task100Ms() {
 
   if (blinkDivider == 0) {
     blinkState = !blinkState;
-    // Task100Ms runs at 10 Hz; divider=4 means 500 ms per half-cycle (1 Hz blink).
+    // Task100Ms runs at 10 Hz; divider=4 means 500 ms per half-cycle
+    // (1 Hz blink).
     blinkDivider = 4;
   } else {
     blinkDivider--;
@@ -159,8 +160,8 @@ void PKP2300_Lever::Task100Ms() {
   if (buttonMsgTimeout > 0) {
     buttonMsgTimeout--;
   } else {
-    // Sent continuously while TPDO1 is missing to recover panel state after loss.
-    // CANopen NMT Start Remote Node: byte0=0x01 (start), byte1=node ID.
+    // Sent continuously while TPDO1 is missing to recover panel state after
+    // loss. CANopen NMT Start Remote Node: byte0=0x01 (start), byte1=node ID.
     uint8_t nmtStart[8] = {1, PKP_NODE_ID, 0, 0, 0, 0, 0, 0};
     can->Send(0x000, (uint32_t *)nmtStart, 8);
   }
