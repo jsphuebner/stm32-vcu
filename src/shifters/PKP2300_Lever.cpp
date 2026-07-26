@@ -194,7 +194,8 @@ void PKP2300_Lever::HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState
 
   if (heaterEncoder) {
     const Param::Attributes *heatAttrs = Param::GetAttrib(Param::HeatPwr);
-    float maxHeatPower = heatAttrs != nullptr ? heatAttrs->max : 0.0f;
+    float maxHeatPower =
+        heatAttrs != nullptr ? (float)heatAttrs->max / FRAC_FAC : 0.0f;
     int currentStep =
         LevelToStep((float)Param::GetInt(Param::HeatPwr), maxHeatPower);
 
@@ -217,7 +218,9 @@ void PKP2300_Lever::HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState
 
   const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
   float maxRegenMagnitude =
-      regenAttrs != nullptr ? std::fabs(regenAttrs->min) : 0.0f;
+      regenAttrs != nullptr
+          ? std::fabs((float)regenAttrs->min / FRAC_FAC)
+          : 0.0f;
   float currentRegenMagnitude = std::fabs(Param::GetFloat(Param::regenmax));
   int currentStep = LevelToStep(currentRegenMagnitude, maxRegenMagnitude);
 
@@ -299,7 +302,9 @@ void PKP2300_Lever::DecodeCAN(int id, uint32_t *data) {
         if (restoreValue >= 0.0f) {
           const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
           float maxRegenMagnitude =
-            regenAttrs != nullptr ? std::fabs(regenAttrs->min) : 0.0f;
+              regenAttrs != nullptr
+                  ? std::fabs((float)regenAttrs->min / FRAC_FAC)
+                  : 0.0f;
           restoreValue = StepToRegenValue(1, maxRegenMagnitude);
         }
         Param::SetFloat(Param::regenmax, restoreValue);
@@ -442,8 +447,10 @@ void PKP2300_Lever::SendLEDs() {
     const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
     const Param::Attributes *heatAttrs = Param::GetAttrib(Param::HeatPwr);
     float maxRegenMagnitude =
-        regenAttrs != nullptr ? std::fabs(regenAttrs->min) : 0.0f;
-    float maxHeatPower = heatAttrs != nullptr ? heatAttrs->max : 0.0f;
+        regenAttrs != nullptr ? std::fabs((float)regenAttrs->min / FRAC_FAC)
+                              : 0.0f;
+    float maxHeatPower =
+        heatAttrs != nullptr ? (float)heatAttrs->max / FRAC_FAC : 0.0f;
     float regenMagnitude = std::fabs(Param::GetFloat(Param::regenmax));
     float actualHeaterPower = Param::GetFloat(Param::powerheater);
     int regenStep = LevelToStep(regenMagnitude, maxRegenMagnitude);
@@ -452,10 +459,12 @@ void PKP2300_Lever::SendLEDs() {
     uint16_t heaterMask = StepToRingMask(heaterStep);
     uint8_t ringLedBytes[8] = {0};
 
-    ringLedBytes[0] = regenMask & 0xFF;
-    ringLedBytes[1] = regenMask >> 8;
-    ringLedBytes[2] = heaterMask & 0xFF;
-    ringLedBytes[3] = heaterMask >> 8;
+    // bytes 0-1 → encoder 2 (knob 2) → heater
+    // bytes 2-3 → encoder 1 (knob 1) → regen
+    ringLedBytes[0] = heaterMask & 0xFF;
+    ringLedBytes[1] = heaterMask >> 8;
+    ringLedBytes[2] = regenMask & 0xFF;
+    ringLedBytes[3] = regenMask >> 8;
 
     can->Send(PKP_MT_RPDO2, (uint32_t *)ringLedBytes, 8);
   }
