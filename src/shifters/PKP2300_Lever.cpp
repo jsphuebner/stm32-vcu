@@ -213,6 +213,8 @@ void PKP2300_Lever::HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState
     currentStep = ClampStep(currentStep);
     int heatPowerSetpoint = StepToHeatPower(currentStep, maxHeatPower);
     Param::SetInt(Param::HeatPwr, heatPowerSetpoint);
+    if (currentStep == 0)
+      Param::SetInt(Param::HeatReq, 0);
     return;
   }
 
