@@ -30,7 +30,7 @@
 #include "shifters/PKP2300_Lever.h"
 #include "params.h"
 #include "throttle.h"
-#include <math.h>
+#include <cmath>
 
 // CANOpen IDs for node 1
 #define PKP_TPDO1 0x195 // button states from panel
@@ -63,6 +63,10 @@
 
 #define MT_ENCODER_CLOCKWISE 0x01
 #define MT_ENCODER_COUNTERCLOCKWISE 0x81
+
+static const float SOC_THRESHOLD_REVERSE = 33.3f;
+static const float SOC_THRESHOLD_NEUTRAL = 66.6f;
+static const float SOC_THRESHOLD_DRIVE = 100.0f;
 
 static int8_t GearToParamDir(Shifter::Sgear gear) {
   switch (gear) {
@@ -139,7 +143,7 @@ static int LevelToStep(float level, float fullScale) {
     return 0;
 
   float scaled = (level * 16.0f) / fullScale;
-  return ClampStep((int)(scaled + 0.5f));
+  return ClampStep((int)std::roundf(scaled));
 }
 
 static float StepToRegenValue(int step, float maxMagnitude) {
@@ -153,7 +157,7 @@ static int StepToHeatPower(int step, float maxPower) {
   step = ClampStep(step);
   if (maxPower <= 0.0f)
     return 0;
-  return (int)(((maxPower * (float)step) / 16.0f) + 0.5f);
+  return (int)std::roundf((maxPower * (float)step) / 16.0f);
 }
 
 static uint16_t StepToRingMask(int step) {
@@ -215,8 +219,8 @@ void PKP2300_Lever::HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState
 
   const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
   float maxRegenMagnitude =
-      regenAttrs != nullptr ? fabsf(regenAttrs->min) : 0.0f;
-  float currentRegenMagnitude = fabsf(Param::GetFloat(Param::regenmax));
+      regenAttrs != nullptr ? std::fabs(regenAttrs->min) : 0.0f;
+  float currentRegenMagnitude = std::fabs(Param::GetFloat(Param::regenmax));
   int currentStep = LevelToStep(currentRegenMagnitude, maxRegenMagnitude);
 
   if (encoderState == MT_ENCODER_CLOCKWISE)
@@ -353,7 +357,6 @@ void PKP2300_Lever::Task100Ms() {
 
 void PKP2300_Lever::SendLEDs() {
   float soc = Param::GetFloat(Param::SOC);
-  const float socThreshold[3] = {33.3f, 66.6f, 100.0f};
   int opmode = Param::GetInt(Param::opmode);
   bool charging = (opmode == MOD_CHARGE);
   bool heatReq = Param::GetBool(Param::HeatReq);
@@ -367,20 +370,20 @@ void PKP2300_Lever::SendLEDs() {
   uint8_t btnHeat = GetHeatMask(mtModelDetected);
   uint8_t ledBytes[8] = {0};
 
-  if (soc > socThreshold[0])
+  if (soc > SOC_THRESHOLD_REVERSE)
     ledBytes[LED_RED] = ledBytes[LED_GREEN] = btnReverse;
-  if (soc > socThreshold[1])
+  if (soc > SOC_THRESHOLD_NEUTRAL)
     ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnNeutral;
-  if (soc >= socThreshold[2])
+  if (soc >= SOC_THRESHOLD_DRIVE)
     ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnDrive;
 
   if (charging &&
       blinkState) { // turn on one above current SoC if blinkstate is on
-    if (soc < socThreshold[0])
+    if (soc < SOC_THRESHOLD_REVERSE)
       ledBytes[LED_RED] = ledBytes[LED_GREEN] = btnReverse;
-    else if (soc < socThreshold[1])
+    else if (soc < SOC_THRESHOLD_NEUTRAL)
       ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnNeutral;
-    else if (soc < socThreshold[2])
+    else if (soc < SOC_THRESHOLD_DRIVE)
       ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnDrive;
   }
 
@@ -441,9 +444,9 @@ void PKP2300_Lever::SendLEDs() {
     const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
     const Param::Attributes *heatAttrs = Param::GetAttrib(Param::HeatPwr);
     float maxRegenMagnitude =
-        regenAttrs != nullptr ? fabsf(regenAttrs->min) : 0.0f;
+        regenAttrs != nullptr ? std::fabs(regenAttrs->min) : 0.0f;
     float maxHeatPower = heatAttrs != nullptr ? heatAttrs->max : 0.0f;
-    float regenMagnitude = fabsf(Param::GetFloat(Param::regenmax));
+    float regenMagnitude = std::fabs(Param::GetFloat(Param::regenmax));
     float heaterPower = Param::GetFloat(Param::powerheater);
     int regenStep = LevelToStep(regenMagnitude, maxRegenMagnitude);
     int heaterStep = LevelToStep(heaterPower, maxHeatPower);
