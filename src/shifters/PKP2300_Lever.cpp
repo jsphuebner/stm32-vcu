@@ -142,6 +142,20 @@ static int LevelToStep(float level, float fullScale) {
   return ClampStep((int)(scaled + 0.5f));
 }
 
+static float StepToRegenValue(int step, float maxMagnitude) {
+  step = ClampStep(step);
+  if (step == 0 || maxMagnitude <= 0.0f)
+    return 0.0f;
+  return -(maxMagnitude * ((float)step / 16.0f));
+}
+
+static int StepToHeatPower(int step, float maxPower) {
+  step = ClampStep(step);
+  if (maxPower <= 0.0f)
+    return 0;
+  return (int)(((maxPower * (float)step) / 16.0f) + 0.5f);
+}
+
 static uint16_t StepToRingMask(int step) {
   step = ClampStep(step);
   if (step == 0)
@@ -163,7 +177,6 @@ void PKP2300_Lever::EnterMtMode() {
     return;
 
   mtModelDetected = true;
-  prevButtonState = 0;
   regenDisabled = false;
   Throttle::noregenreq = false;
 
@@ -195,8 +208,7 @@ void PKP2300_Lever::HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState
     }
 
     currentStep = ClampStep(currentStep);
-    int heatPowerSetpoint =
-        (int)(((maxHeatPower * (float)currentStep) / 16.0f) + 0.5f);
+    int heatPowerSetpoint = StepToHeatPower(currentStep, maxHeatPower);
     Param::SetInt(Param::HeatPwr, heatPowerSetpoint);
     return;
   }
@@ -214,10 +226,7 @@ void PKP2300_Lever::HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState
 
   currentStep = ClampStep(currentStep);
 
-  float newRegen = 0.0f;
-  if (currentStep > 0 && maxRegenMagnitude > 0.0f)
-    newRegen = -(maxRegenMagnitude * ((float)currentStep / 16.0f));
-
+  float newRegen = StepToRegenValue(currentStep, maxRegenMagnitude);
   Param::SetFloat(Param::regenmax, newRegen);
   if (newRegen < 0.0f)
     mtLastRegenValue = newRegen;
@@ -289,7 +298,7 @@ void PKP2300_Lever::DecodeCAN(int id, uint32_t *data) {
           const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
           float maxRegenMagnitude =
               regenAttrs != nullptr ? fabsf(regenAttrs->min) : 0.0f;
-          restoreValue = -(maxRegenMagnitude / 16.0f);
+          restoreValue = StepToRegenValue(1, maxRegenMagnitude);
         }
         Param::SetFloat(Param::regenmax, restoreValue);
         if (restoreValue < 0.0f)
@@ -344,7 +353,7 @@ void PKP2300_Lever::Task100Ms() {
 
 void PKP2300_Lever::SendLEDs() {
   float soc = Param::GetFloat(Param::SOC);
-  const float socThreshold[3] = {33.3f, 66.6f, 99.0f};
+  const float socThreshold[3] = {33.3f, 66.6f, 100.0f};
   int opmode = Param::GetInt(Param::opmode);
   bool charging = (opmode == MOD_CHARGE);
   bool heatReq = Param::GetBool(Param::HeatReq);
@@ -362,7 +371,7 @@ void PKP2300_Lever::SendLEDs() {
     ledBytes[LED_RED] = ledBytes[LED_GREEN] = btnReverse;
   if (soc > socThreshold[1])
     ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnNeutral;
-  if (soc > socThreshold[2])
+  if (soc >= socThreshold[2])
     ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnDrive;
 
   if (charging &&
@@ -434,10 +443,10 @@ void PKP2300_Lever::SendLEDs() {
     float maxRegenMagnitude =
         regenAttrs != nullptr ? fabsf(regenAttrs->min) : 0.0f;
     float maxHeatPower = heatAttrs != nullptr ? heatAttrs->max : 0.0f;
-    float regenLevel = fabsf(Param::GetFloat(Param::regenmax));
-    float heaterLevel = Param::GetFloat(Param::powerheater);
-    int regenStep = LevelToStep(regenLevel, maxRegenMagnitude);
-    int heaterStep = LevelToStep(heaterLevel, maxHeatPower);
+    float regenMagnitude = fabsf(Param::GetFloat(Param::regenmax));
+    float heaterPower = Param::GetFloat(Param::powerheater);
+    int regenStep = LevelToStep(regenMagnitude, maxRegenMagnitude);
+    int heaterStep = LevelToStep(heaterPower, maxHeatPower);
     uint16_t regenMask = StepToRingMask(regenStep);
     uint16_t heaterMask = StepToRingMask(heaterStep);
     uint8_t ringLedBytes[8] = {0};
