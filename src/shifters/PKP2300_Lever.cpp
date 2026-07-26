@@ -181,8 +181,6 @@ void PKP2300_Lever::EnterMtMode() {
     return;
 
   mtModelDetected = true;
-  regenDisabled = false;
-  Throttle::noregenreq = false;
 
   float currentRegen = Param::GetFloat(Param::regenmax);
   if (currentRegen < 0.0f)
@@ -301,7 +299,7 @@ void PKP2300_Lever::DecodeCAN(int id, uint32_t *data) {
         if (restoreValue >= 0.0f) {
           const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
           float maxRegenMagnitude =
-              regenAttrs != nullptr ? fabsf(regenAttrs->min) : 0.0f;
+            regenAttrs != nullptr ? std::fabs(regenAttrs->min) : 0.0f;
           restoreValue = StepToRegenValue(1, maxRegenMagnitude);
         }
         Param::SetFloat(Param::regenmax, restoreValue);
@@ -417,12 +415,12 @@ void PKP2300_Lever::SendLEDs() {
       ledBytes[LED_RED] &= ~btnRegen;
       ledBytes[LED_GREEN] &= ~btnRegen;
     }
-  }
 
-  if (mtModelDetected && regenEnabled) {
-    ledBytes[LED_BLUE] |= btnRegen;
-    ledBytes[LED_RED] &= ~btnRegen;
-    ledBytes[LED_GREEN] &= ~btnRegen;
+    if (mtModelDetected && regenEnabled) {
+      ledBytes[LED_BLUE] |= btnRegen;
+      ledBytes[LED_RED] &= ~btnRegen;
+      ledBytes[LED_GREEN] &= ~btnRegen;
+    }
   }
 
   if (heatReq && heaterPowerActive) {
@@ -447,9 +445,9 @@ void PKP2300_Lever::SendLEDs() {
         regenAttrs != nullptr ? std::fabs(regenAttrs->min) : 0.0f;
     float maxHeatPower = heatAttrs != nullptr ? heatAttrs->max : 0.0f;
     float regenMagnitude = std::fabs(Param::GetFloat(Param::regenmax));
-    float heaterPower = Param::GetFloat(Param::powerheater);
+    float actualHeaterPower = Param::GetFloat(Param::powerheater);
     int regenStep = LevelToStep(regenMagnitude, maxRegenMagnitude);
-    int heaterStep = LevelToStep(heaterPower, maxHeatPower);
+    int heaterStep = LevelToStep(actualHeaterPower, maxHeatPower);
     uint16_t regenMask = StepToRingMask(regenStep);
     uint16_t heaterMask = StepToRingMask(heaterStep);
     uint8_t ringLedBytes[8] = {0};
