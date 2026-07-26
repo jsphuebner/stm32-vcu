@@ -373,21 +373,31 @@ void PKP2300_Lever::SendLEDs() {
   uint8_t btnHeat = GetHeatMask(mtModelDetected);
   uint8_t ledBytes[8] = {0};
 
-  if (soc > SOC_THRESHOLD_REVERSE)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnReverse;
-  if (soc > SOC_THRESHOLD_NEUTRAL)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnNeutral;
-  if (soc >= SOC_THRESHOLD_DRIVE)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnDrive;
+  if (soc > SOC_THRESHOLD_REVERSE) {
+    ledBytes[LED_RED] |= btnReverse;
+    ledBytes[LED_GREEN] |= btnReverse;
+  }
+  if (soc > SOC_THRESHOLD_NEUTRAL) {
+    ledBytes[LED_RED] |= btnNeutral;
+    ledBytes[LED_GREEN] |= btnNeutral;
+  }
+  if (soc >= SOC_THRESHOLD_DRIVE) {
+    ledBytes[LED_RED] |= btnDrive;
+    ledBytes[LED_GREEN] |= btnDrive;
+  }
 
   if (charging &&
       blinkState) { // turn on one above current SoC if blinkstate is on
-    if (soc < SOC_THRESHOLD_REVERSE)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnReverse;
-    else if (soc < SOC_THRESHOLD_NEUTRAL)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnNeutral;
-    else if (soc < SOC_THRESHOLD_DRIVE)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= btnDrive;
+    if (soc < SOC_THRESHOLD_REVERSE) {
+      ledBytes[LED_RED] |= btnReverse;
+      ledBytes[LED_GREEN] |= btnReverse;
+    } else if (soc < SOC_THRESHOLD_NEUTRAL) {
+      ledBytes[LED_RED] |= btnNeutral;
+      ledBytes[LED_GREEN] |= btnNeutral;
+    } else if (soc < SOC_THRESHOLD_DRIVE) {
+      ledBytes[LED_RED] |= btnDrive;
+      ledBytes[LED_GREEN] |= btnDrive;
+    }
   }
 
   // Drive mode always takes precedence over SoC display
