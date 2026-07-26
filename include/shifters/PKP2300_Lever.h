@@ -44,6 +44,8 @@ public:
 
 private:
   void SendLEDs();
+  void HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState);
+  void EnterMtMode();
 
   Shifter::Sgear gear = PARK;
 
@@ -52,7 +54,8 @@ private:
 
   // Toggleable states
   bool regenDisabled = false;
-  bool heaterOn = false;
+  float mtLastRegenValue = 0.0f;
+  bool mtModelDetected = false;
 
   // Blink state for charge mode LED
   bool blinkState = false;

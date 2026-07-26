@@ -30,10 +30,14 @@
 #include "shifters/PKP2300_Lever.h"
 #include "params.h"
 #include "throttle.h"
+#include <cmath>
 
 // CANOpen IDs for node 1
 #define PKP_TPDO1 0x195 // button states from panel
 #define PKP_RPDO1 0x215 // LED control to panel
+#define PKP_MT_TPDO2 0x295 // encoder 1 state from panel
+#define PKP_MT_TPDO3 0x395 // encoder 2 state from panel
+#define PKP_MT_RPDO2 0x415 // ring LED control to panel
 #define PKP_NODE_ID 0x15
 #define BUTTON_MSG_TIMEOUT_CYCLES 3 // 300 ms with Task100Ms period
 
@@ -43,18 +47,26 @@
 #define LED_BLUE 2
 
 // Button (and LED) bit positions in TPDO1 byte 0
-#define BTN_DRIVE (1 << 0)
-#define BTN_NEUTRAL (1 << 1)
-#define BTN_REVERSE (1 << 2)
-#define BTN_PARK (1 << 3)
-#define BTN_REGEN (1 << 4)
-#define BTN_HEAT (1 << 5)
+#define BTN_REG_DRIVE (1 << 0)
+#define BTN_REG_NEUTRAL (1 << 1)
+#define BTN_REG_REVERSE (1 << 2)
+#define BTN_REG_PARK (1 << 3)
+#define BTN_REG_REGEN (1 << 4)
+#define BTN_REG_HEAT (1 << 5)
 
-// SoC threshold (%) for each LED (K1=16.7%, K2=33.3%, ..., K6=100%)
-static const float socThreshold[6] = {
-    100.0f / 6.0f * 1, 100.0f / 6.0f * 2, 100.0f / 6.0f * 3,
-    100.0f / 6.0f * 4, 100.0f / 6.0f * 5, 100.0f / 6.0f * 6,
-};
+#define BTN_MT_ENC1 (1 << 0)
+#define BTN_MT_PARK (1 << 1)
+#define BTN_MT_ENC2 (1 << 2)
+#define BTN_MT_DRIVE (1 << 3)
+#define BTN_MT_NEUTRAL (1 << 4)
+#define BTN_MT_REVERSE (1 << 5)
+
+#define MT_ENCODER_CLOCKWISE 0x01
+#define MT_ENCODER_COUNTERCLOCKWISE 0x81
+
+static const float SOC_THRESHOLD_REVERSE = 33.3f;
+static const float SOC_THRESHOLD_NEUTRAL = 66.6f;
+static const float SOC_THRESHOLD_DRIVE = 100.0f;
 
 static int8_t GearToParamDir(Shifter::Sgear gear) {
   switch (gear) {
@@ -80,31 +92,172 @@ static Shifter::Sgear ParamDirToGear(int dir) {
   return Shifter::NEUTRAL;
 }
 
-static uint8_t GearToButtonMask(Shifter::Sgear gear) {
+static uint8_t GetDriveMask(bool mtModelDetected) {
+  return mtModelDetected ? BTN_MT_DRIVE : BTN_REG_DRIVE;
+}
+
+static uint8_t GetNeutralMask(bool mtModelDetected) {
+  return mtModelDetected ? BTN_MT_NEUTRAL : BTN_REG_NEUTRAL;
+}
+
+static uint8_t GetReverseMask(bool mtModelDetected) {
+  return mtModelDetected ? BTN_MT_REVERSE : BTN_REG_REVERSE;
+}
+
+static uint8_t GetParkMask(bool mtModelDetected) {
+  return mtModelDetected ? BTN_MT_PARK : BTN_REG_PARK;
+}
+
+static uint8_t GetRegenMask(bool mtModelDetected) {
+  return mtModelDetected ? BTN_MT_ENC1 : BTN_REG_REGEN;
+}
+
+static uint8_t GetHeatMask(bool mtModelDetected) {
+  return mtModelDetected ? BTN_MT_ENC2 : BTN_REG_HEAT;
+}
+
+static uint8_t GearToButtonMask(Shifter::Sgear gear, bool mtModelDetected) {
   switch (gear) {
   case Shifter::PARK:
-    return BTN_PARK;
+    return GetParkMask(mtModelDetected);
   case Shifter::REVERSE:
-    return BTN_REVERSE;
+    return GetReverseMask(mtModelDetected);
   case Shifter::NEUTRAL:
-    return BTN_NEUTRAL;
+    return GetNeutralMask(mtModelDetected);
   case Shifter::DRIVE:
   default:
-    return BTN_DRIVE;
+    return GetDriveMask(mtModelDetected);
   }
+}
+
+static int ClampStep(int value) {
+  if (value < 0)
+    return 0;
+  if (value > 16)
+    return 16;
+  return value;
+}
+
+static int LevelToStep(float level, float fullScale) {
+  if (fullScale <= 0.0f)
+    return 0;
+
+  float scaled = (level * 16.0f) / fullScale;
+  return ClampStep((int)std::roundf(scaled));
+}
+
+static float StepToRegenValue(int step, float maxMagnitude) {
+  step = ClampStep(step);
+  if (step == 0 || maxMagnitude <= 0.0f)
+    return 0.0f;
+  return -(maxMagnitude * ((float)step / 16.0f));
+}
+
+static int StepToHeatPower(int step, float maxPower) {
+  step = ClampStep(step);
+  if (maxPower <= 0.0f)
+    return 0;
+  return (int)std::roundf((maxPower * (float)step) / 16.0f);
+}
+
+static uint16_t StepToRingMask(int step) {
+  step = ClampStep(step);
+  if (step == 0)
+    return 0;
+  if (step >= 16)
+    return 0xFFFF;
+  return (uint16_t)((1U << step) - 1U);
 }
 
 void PKP2300_Lever::SetCanInterface(CanHardware *c) {
   can = c;
   can->RegisterUserMessage(PKP_TPDO1);
+  can->RegisterUserMessage(PKP_MT_TPDO2);
+  can->RegisterUserMessage(PKP_MT_TPDO3);
+}
+
+void PKP2300_Lever::EnterMtMode() {
+  if (mtModelDetected)
+    return;
+
+  mtModelDetected = true;
+
+  float currentRegen = Param::GetFloat(Param::regenmax);
+  if (currentRegen < 0.0f)
+    mtLastRegenValue = currentRegen;
+}
+
+void PKP2300_Lever::HandleMtEncoderTurn(bool heaterEncoder, uint8_t encoderState) {
+  if (encoderState != MT_ENCODER_CLOCKWISE &&
+      encoderState != MT_ENCODER_COUNTERCLOCKWISE)
+    return;
+
+  if (heaterEncoder) {
+    const Param::Attributes *heatAttrs = Param::GetAttrib(Param::HeatPwr);
+    float maxHeatPower =
+        heatAttrs != nullptr ? (float)heatAttrs->max / FRAC_FAC : 0.0f;
+    int currentStep =
+        LevelToStep((float)Param::GetInt(Param::HeatPwr), maxHeatPower);
+
+    if (encoderState == MT_ENCODER_CLOCKWISE) {
+      if (!Param::GetBool(Param::HeatReq)) {
+        Param::SetInt(Param::HeatReq, 1);
+        currentStep = 1;
+      } else {
+        currentStep++;
+      }
+    } else {
+      currentStep--;
+    }
+
+    currentStep = ClampStep(currentStep);
+    int heatPowerSetpoint = StepToHeatPower(currentStep, maxHeatPower);
+    Param::SetInt(Param::HeatPwr, heatPowerSetpoint);
+    if (currentStep == 0)
+      Param::SetInt(Param::HeatReq, 0);
+    return;
+  }
+
+  const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
+  float maxRegenMagnitude =
+      regenAttrs != nullptr
+          ? std::fabs((float)regenAttrs->min / FRAC_FAC)
+          : 0.0f;
+  float currentRegenMagnitude = std::fabs(Param::GetFloat(Param::regenmax));
+  int currentStep = LevelToStep(currentRegenMagnitude, maxRegenMagnitude);
+
+  if (encoderState == MT_ENCODER_CLOCKWISE)
+    currentStep++;
+  else
+    currentStep--;
+
+  currentStep = ClampStep(currentStep);
+
+  float newRegen = StepToRegenValue(currentStep, maxRegenMagnitude);
+  Param::SetFloat(Param::regenmax, newRegen);
+  if (newRegen < 0.0f)
+    mtLastRegenValue = newRegen;
 }
 
 void PKP2300_Lever::DecodeCAN(int id, uint32_t *data) {
+  uint8_t *bytes = (uint8_t *)data;
+
+  if (id == PKP_MT_TPDO2 || id == PKP_MT_TPDO3) {
+    EnterMtMode();
+    HandleMtEncoderTurn(id == PKP_MT_TPDO3, bytes[0]);
+    return;
+  }
+
   if (id != PKP_TPDO1)
     return;
 
-  uint8_t *bytes = (uint8_t *)data;
   uint8_t buttons = bytes[0];
+  uint8_t btnDrive = GetDriveMask(mtModelDetected);
+  uint8_t btnNeutral = GetNeutralMask(mtModelDetected);
+  uint8_t btnReverse = GetReverseMask(mtModelDetected);
+  uint8_t btnPark = GetParkMask(mtModelDetected);
+  uint8_t btnRegen = GetRegenMask(mtModelDetected);
+  uint8_t btnHeat = GetHeatMask(mtModelDetected);
   buttonMsgTimeout = BUTTON_MSG_TIMEOUT_CYCLES;
   // Only allow changing away from PARK if brake pedal is pressed
   bool allowGearChange = gear != PARK || Param::GetBool(Param::din_brake);
@@ -113,31 +266,58 @@ void PKP2300_Lever::DecodeCAN(int id, uint32_t *data) {
   uint8_t pressed = buttons & ~prevButtonState;
 
   // K3 = Forward/Drive
-  if ((pressed & BTN_DRIVE) && allowGearChange)
+  if ((pressed & btnDrive) && allowGearChange)
     gear = DRIVE;
 
   // K6 = Reverse
-  if ((pressed & BTN_REVERSE) && allowGearChange)
+  if ((pressed & btnReverse) && allowGearChange)
     gear = REVERSE;
 
   // K2 = Neutral
-  if ((pressed & BTN_NEUTRAL) && allowGearChange)
+  if ((pressed & btnNeutral) && allowGearChange)
     gear = NEUTRAL;
 
   // K5 = Park
-  if (pressed & BTN_PARK)
+  if (pressed & btnPark)
     gear = PARK;
 
-  // K1 = toggle regen disable
-  if (pressed & BTN_REGEN) {
-    regenDisabled = !regenDisabled;
-    Throttle::noregenreq = regenDisabled;
-  }
+  if (!mtModelDetected) {
+    // K1 = toggle regen disable
+    if (pressed & btnRegen) {
+      regenDisabled = !regenDisabled;
+      Throttle::noregenreq = regenDisabled;
+    }
 
-  // K4 = toggle heater
-  if (pressed & BTN_HEAT) {
-    heaterOn = !heaterOn;
-    Param::SetInt(Param::HeatReq, heaterOn ? 1 : 0);
+    // K4 = toggle heater
+    if (pressed & btnHeat) {
+      Param::SetInt(Param::HeatReq, Param::GetBool(Param::HeatReq) ? 0 : 1);
+    }
+  } else {
+    // Encoder 1 button toggles regen between off and last set value.
+    if (pressed & btnRegen) {
+      float currentRegen = Param::GetFloat(Param::regenmax);
+      if (currentRegen < 0.0f) {
+        mtLastRegenValue = currentRegen;
+        Param::SetFloat(Param::regenmax, 0.0f);
+      } else {
+        float restoreValue = mtLastRegenValue;
+        if (restoreValue >= 0.0f) {
+          const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
+          float maxRegenMagnitude =
+              regenAttrs != nullptr
+                  ? std::fabs((float)regenAttrs->min / FRAC_FAC)
+                  : 0.0f;
+          restoreValue = StepToRegenValue(1, maxRegenMagnitude);
+        }
+        Param::SetFloat(Param::regenmax, restoreValue);
+        if (restoreValue < 0.0f)
+          mtLastRegenValue = restoreValue;
+      }
+    }
+
+    // Encoder 2 button toggles heater request.
+    if (pressed & btnHeat)
+      Param::SetInt(Param::HeatReq, Param::GetBool(Param::HeatReq) ? 0 : 1);
   }
 
   prevButtonState = buttons;
@@ -184,84 +364,122 @@ void PKP2300_Lever::SendLEDs() {
   float soc = Param::GetFloat(Param::SOC);
   int opmode = Param::GetInt(Param::opmode);
   bool charging = (opmode == MOD_CHARGE);
+  bool heatReq = Param::GetBool(Param::HeatReq);
   bool heaterPowerActive = Param::GetFloat(Param::powerheater) > 0.0f;
+  bool regenEnabled = Param::GetFloat(Param::regenmax) < 0.0f;
+  uint8_t btnDrive = GetDriveMask(mtModelDetected);
+  uint8_t btnNeutral = GetNeutralMask(mtModelDetected);
+  uint8_t btnReverse = GetReverseMask(mtModelDetected);
+  uint8_t btnPark = GetParkMask(mtModelDetected);
+  uint8_t btnRegen = GetRegenMask(mtModelDetected);
+  uint8_t btnHeat = GetHeatMask(mtModelDetected);
   uint8_t ledBytes[8] = {0};
 
-  if (soc > 16.6f)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] = BTN_HEAT;
-  if (soc > 32.2f)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_REVERSE;
-  if (soc > 49.8f)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_REGEN;
-  if (soc > 66.4f)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_NEUTRAL;
-  if (soc > 83.0f)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_PARK;
-  if (soc > 99.0f)
-    ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_DRIVE;
+  if (soc > SOC_THRESHOLD_REVERSE) {
+    ledBytes[LED_RED] |= btnReverse;
+    ledBytes[LED_GREEN] |= btnReverse;
+  }
+  if (soc > SOC_THRESHOLD_NEUTRAL) {
+    ledBytes[LED_RED] |= btnNeutral;
+    ledBytes[LED_GREEN] |= btnNeutral;
+  }
+  if (soc >= SOC_THRESHOLD_DRIVE) {
+    ledBytes[LED_RED] |= btnDrive;
+    ledBytes[LED_GREEN] |= btnDrive;
+  }
 
   if (charging &&
       blinkState) { // turn on one above current SoC if blinkstate is on
-    if (soc < 16.6f)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] = BTN_HEAT;
-    else if (soc < 32.2f)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_REVERSE;
-    else if (soc < 49.8f)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_REGEN;
-    else if (soc < 66.4f)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_NEUTRAL;
-    else if (soc < 83.0f)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_PARK;
-    else if (soc < 99.0f)
-      ledBytes[LED_RED] = ledBytes[LED_GREEN] |= BTN_DRIVE;
+    if (soc < SOC_THRESHOLD_REVERSE) {
+      ledBytes[LED_RED] |= btnReverse;
+      ledBytes[LED_GREEN] |= btnReverse;
+    } else if (soc < SOC_THRESHOLD_NEUTRAL) {
+      ledBytes[LED_RED] |= btnNeutral;
+      ledBytes[LED_GREEN] |= btnNeutral;
+    } else if (soc < SOC_THRESHOLD_DRIVE) {
+      ledBytes[LED_RED] |= btnDrive;
+      ledBytes[LED_GREEN] |= btnDrive;
+    }
   }
 
   // Drive mode always takes precedence over SoC display
   if (opmode == MOD_RUN) {
     switch (gear) {
     case DRIVE:
-      ledBytes[LED_BLUE] |= BTN_DRIVE;
-      ledBytes[LED_RED] &= ~BTN_DRIVE;
-      ledBytes[LED_GREEN] &= ~BTN_DRIVE;
+      ledBytes[LED_BLUE] |= btnDrive;
+      ledBytes[LED_RED] &= ~btnDrive;
+      ledBytes[LED_GREEN] &= ~btnDrive;
       break;
     case REVERSE:
-      ledBytes[LED_BLUE] |= BTN_REVERSE;
-      ledBytes[LED_RED] &= ~BTN_REVERSE;
-      ledBytes[LED_GREEN] &= ~BTN_REVERSE;
+      ledBytes[LED_BLUE] |= btnReverse;
+      ledBytes[LED_RED] &= ~btnReverse;
+      ledBytes[LED_GREEN] &= ~btnReverse;
       break;
     case NEUTRAL:
-      ledBytes[LED_BLUE] |= BTN_NEUTRAL;
-      ledBytes[LED_RED] &= ~BTN_NEUTRAL;
-      ledBytes[LED_GREEN] &= ~BTN_NEUTRAL;
+      ledBytes[LED_BLUE] |= btnNeutral;
+      ledBytes[LED_RED] &= ~btnNeutral;
+      ledBytes[LED_GREEN] &= ~btnNeutral;
       break;
     case PARK:
-      ledBytes[LED_BLUE] |= BTN_PARK;
-      ledBytes[LED_RED] &= ~BTN_PARK;
-      ledBytes[LED_GREEN] &= ~BTN_PARK;
+      ledBytes[LED_BLUE] |= btnPark;
+      ledBytes[LED_RED] &= ~btnPark;
+      ledBytes[LED_GREEN] &= ~btnPark;
       break;
     }
 
-    if (regenDisabled) {
-      ledBytes[LED_BLUE] |= BTN_REGEN;
-      ledBytes[LED_RED] &= ~BTN_REGEN;
-      ledBytes[LED_GREEN] &= ~BTN_REGEN;
+    if (!mtModelDetected && regenDisabled) {
+      ledBytes[LED_BLUE] |= btnRegen;
+      ledBytes[LED_RED] &= ~btnRegen;
+      ledBytes[LED_GREEN] &= ~btnRegen;
+    }
+
+    if (mtModelDetected && regenEnabled) {
+      ledBytes[LED_BLUE] |= btnRegen;
+      ledBytes[LED_RED] &= ~btnRegen;
+      ledBytes[LED_GREEN] &= ~btnRegen;
     }
   }
 
-  if (heaterOn && heaterPowerActive) {
-    ledBytes[LED_BLUE] |= BTN_HEAT;
-    ledBytes[LED_RED] &= ~BTN_HEAT;
-    ledBytes[LED_GREEN] &= ~BTN_HEAT;
+  if (heatReq && heaterPowerActive) {
+    ledBytes[LED_BLUE] |= btnHeat;
+    ledBytes[LED_RED] &= ~btnHeat;
+    ledBytes[LED_GREEN] &= ~btnHeat;
   }
 
   if (flashRejectedDirection) {
-    uint8_t rejectedMask = GearToButtonMask(rejectedDirection);
+    uint8_t rejectedMask = GearToButtonMask(rejectedDirection, mtModelDetected);
     ledBytes[LED_RED] |= rejectedMask;
     ledBytes[LED_GREEN] &= ~rejectedMask;
     ledBytes[LED_BLUE] &= ~rejectedMask;
   }
 
   can->Send(PKP_RPDO1, (uint32_t *)ledBytes, 8);
+
+  if (mtModelDetected) {
+    const Param::Attributes *regenAttrs = Param::GetAttrib(Param::regenmax);
+    const Param::Attributes *heatAttrs = Param::GetAttrib(Param::HeatPwr);
+    float maxRegenMagnitude =
+        regenAttrs != nullptr ? std::fabs((float)regenAttrs->min / FRAC_FAC)
+                              : 0.0f;
+    float maxHeatPower =
+        heatAttrs != nullptr ? (float)heatAttrs->max / FRAC_FAC : 0.0f;
+    float regenMagnitude = std::fabs(Param::GetFloat(Param::regenmax));
+    float actualHeaterPower = Param::GetFloat(Param::powerheater);
+    int regenStep = LevelToStep(regenMagnitude, maxRegenMagnitude);
+    int heaterStep = LevelToStep(actualHeaterPower, maxHeatPower);
+    uint16_t regenMask = StepToRingMask(regenStep);
+    uint16_t heaterMask = StepToRingMask(heaterStep);
+    uint8_t ringLedBytes[8] = {0};
+
+    // bytes 0-1 → encoder 2 (knob 2) → heater
+    // bytes 2-3 → encoder 1 (knob 1) → regen
+    ringLedBytes[0] = heaterMask & 0xFF;
+    ringLedBytes[1] = heaterMask >> 8;
+    ringLedBytes[2] = regenMask & 0xFF;
+    ringLedBytes[3] = regenMask >> 8;
+
+    can->Send(PKP_MT_RPDO2, (uint32_t *)ringLedBytes, 8);
+  }
 }
 
 bool PKP2300_Lever::GetGear(Shifter::Sgear &outGear) {
