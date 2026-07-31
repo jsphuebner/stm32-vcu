@@ -3,6 +3,8 @@
 #include <math.h>
 
 namespace {
+static uCAN_MSG txMessage;
+
 static uint16_t ClampU16(int value) {
   if (value < 0)
     return 0;
@@ -22,8 +24,21 @@ static int16_t ClampS16(int value) {
 
 bool BydCan::Enabled() const { return Param::GetBool(Param::BydCanEnable); }
 
+void BydCan::ResetState() {
+  inverterStartedUp = false;
+  initialDataSent = false;
+  initialSequencePending = false;
+  cyclic2sPending = false;
+  cyclic10sPending = false;
+  cyclic60sPending = false;
+  initialSequenceIndex = 0;
+  cyclic10sIndex = 0;
+  tick2s = 0;
+  tick10s = 0;
+  tick60s = 0;
+}
+
 void BydCan::SendFrame(uint16_t id, const uint8_t data[8]) {
-  uCAN_MSG txMessage;
   txMessage.frame.idType = dSTANDARD_CAN_MSG_ID_2_0B;
   txMessage.frame.id = id;
   txMessage.frame.dlc = 8;
@@ -38,40 +53,106 @@ void BydCan::SendFrame(uint16_t id, const uint8_t data[8]) {
   CANSPI_Transmit(&txMessage);
 }
 
-void BydCan::SendInitialData() {
-  uint8_t msg250[8] = {0x03, 0x29, 0x00, 0x66, 0x00, 0x00, 0x02, 0x09};
-  uint16_t totalCapacity =
-      ClampU16((int)lroundf(Param::GetFloat(Param::BattCap) * 10.0f));
-  msg250[4] = totalCapacity >> 8;
-  msg250[5] = totalCapacity & 0xFF;
+bool BydCan::SendInitialSequenceFrame() {
+  if (!initialSequencePending)
+    return false;
 
-  const uint8_t msg290[8] = {0x06, 0x37, 0x10, 0xD9, 0x00, 0x00, 0x00, 0x00};
-  const uint8_t msg2D0[8] = {0x00, 0x42, 0x59, 0x44, 0x00, 0x00, 0x00, 0x00};
-  const uint8_t msg3D0_0[8] = {0x00, 0x42, 0x61, 0x74, 0x74, 0x65, 0x72, 0x79};
-  const uint8_t msg3D0_1[8] = {0x01, 0x2D, 0x42, 0x6F, 0x78, 0x20, 0x50, 0x72};
-  const uint8_t msg3D0_2[8] = {0x02, 0x65, 0x6D, 0x69, 0x75, 0x6D, 0x20, 0x48};
-  const uint8_t msg3D0_3[8] = {0x03, 0x56, 0x53, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint16_t id = 0;
+  uint8_t data[8] = {0};
 
-  SendFrame(0x250, msg250);
-  SendFrame(0x290, msg290);
-  SendFrame(0x2D0, msg2D0);
-  SendFrame(0x3D0, msg3D0_0);
-  SendFrame(0x3D0, msg3D0_1);
-  SendFrame(0x3D0, msg3D0_2);
-  SendFrame(0x3D0, msg3D0_3);
+  switch (initialSequenceIndex) {
+  case 0: {
+    id = 0x250;
+    const uint16_t totalCapacity =
+        ClampU16((int)lroundf(Param::GetFloat(Param::BattCap) * 10.0f));
+    data[0] = 0x03;
+    data[1] = 0x29;
+    data[2] = 0x00;
+    data[3] = 0x66;
+    data[4] = totalCapacity >> 8;
+    data[5] = totalCapacity & 0xFF;
+    data[6] = 0x02;
+    data[7] = 0x09;
+    break;
+  }
+  case 1:
+    id = 0x290;
+    data[0] = 0x06;
+    data[1] = 0x37;
+    data[2] = 0x10;
+    data[3] = 0xD9;
+    break;
+  case 2:
+    id = 0x2D0;
+    data[1] = 0x42;
+    data[2] = 0x59;
+    data[3] = 0x44;
+    break;
+  case 3:
+    id = 0x3D0;
+    data[1] = 0x42;
+    data[2] = 0x61;
+    data[3] = 0x74;
+    data[4] = 0x74;
+    data[5] = 0x65;
+    data[6] = 0x72;
+    data[7] = 0x79;
+    break;
+  case 4:
+    id = 0x3D0;
+    data[0] = 0x01;
+    data[1] = 0x2D;
+    data[2] = 0x42;
+    data[3] = 0x6F;
+    data[4] = 0x78;
+    data[5] = 0x20;
+    data[6] = 0x50;
+    data[7] = 0x72;
+    break;
+  case 5:
+    id = 0x3D0;
+    data[0] = 0x02;
+    data[1] = 0x65;
+    data[2] = 0x6D;
+    data[3] = 0x69;
+    data[4] = 0x75;
+    data[5] = 0x6D;
+    data[6] = 0x20;
+    data[7] = 0x48;
+    break;
+  default:
+    id = 0x3D0;
+    data[0] = 0x03;
+    data[1] = 0x56;
+    data[2] = 0x53;
+    break;
+  }
+
+  SendFrame(id, data);
+  initialSequenceIndex++;
+  if (initialSequenceIndex >= 7) {
+    initialSequencePending = false;
+    initialSequenceIndex = 0;
+    initialDataSent = true;
+  }
+  return true;
 }
 
-void BydCan::UpdateFrames() {
+bool BydCan::SendCyclicFrame() {
   float packVoltage = Param::GetFloat(Param::udc2);
   if (packVoltage < 10.0f)
     packVoltage = Param::GetFloat(Param::udc);
   if (packVoltage < 10.0f)
     packVoltage = 400.0f;
 
-  const int chargeVoltage = ClampU16((int)lroundf(Param::GetFloat(Param::udclim) * 10.0f));
-  const int dischargeVoltage = ClampU16((int)lroundf(Param::GetFloat(Param::udcmin) * 10.0f));
-  const int maxDischargeCurrent = ClampU16((int)lroundf(fabsf(Param::GetFloat(Param::idcmin)) * 10.0f));
-  const int maxChargeCurrent = ClampU16((int)lroundf(Param::GetFloat(Param::BMS_ChargeLim) * 10.0f));
+  const int chargeVoltage =
+      ClampU16((int)lroundf(Param::GetFloat(Param::udclim) * 10.0f));
+  const int dischargeVoltage =
+      ClampU16((int)lroundf(Param::GetFloat(Param::udcmin) * 10.0f));
+  const int maxDischargeCurrent =
+      ClampU16((int)lroundf(fabsf(Param::GetFloat(Param::idcmin)) * 10.0f));
+  const int maxChargeCurrent =
+      ClampU16((int)lroundf(Param::GetFloat(Param::BMS_ChargeLim) * 10.0f));
 
   uint8_t msg110[8] = {0};
   msg110[0] = (chargeVoltage >> 8) & 0xFF;
@@ -88,12 +169,14 @@ void BydCan::UpdateFrames() {
     socPercent = 0.0f;
   if (socPercent > 100.0f)
     socPercent = 100.0f;
-  uint16_t soc = ClampU16((int)lroundf(socPercent * 100.0f));
+  const uint16_t soc = ClampU16((int)lroundf(socPercent * 100.0f));
 
   const float packCapacityWh = Param::GetFloat(Param::BattCap) * 1000.0f;
   const float fullCapacityAh = packCapacityWh / packVoltage;
-  const uint16_t fullCapacityAh10 = ClampU16((int)lroundf(fullCapacityAh * 10.0f));
-  const uint16_t remCapacityAh10 = ClampU16((int)lroundf(fullCapacityAh * (socPercent / 10.0f)));
+  const uint16_t fullCapacityAh10 =
+      ClampU16((int)lroundf(fullCapacityAh * 10.0f));
+  const uint16_t remCapacityAh10 =
+      ClampU16((int)lroundf(fullCapacityAh * (socPercent / 10.0f)));
 
   uint8_t msg150[8] = {0};
   msg150[0] = soc >> 8;
@@ -105,8 +188,10 @@ void BydCan::UpdateFrames() {
   msg150[6] = fullCapacityAh10 >> 8;
   msg150[7] = fullCapacityAh10 & 0xFF;
 
-  const int voltageDV = ClampU16((int)lroundf(Param::GetFloat(Param::udc) * 10.0f));
-  const int currentDA = ClampS16((int)lroundf(Param::GetFloat(Param::idc) * 10.0f));
+  const int voltageDV =
+      ClampU16((int)lroundf(Param::GetFloat(Param::udc) * 10.0f));
+  const int currentDA =
+      ClampS16((int)lroundf(Param::GetFloat(Param::idc) * 10.0f));
   const float bmsTMin = Param::GetFloat(Param::BMS_Tmin);
   const float bmsTMax = Param::GetFloat(Param::BMS_Tmax);
   const int tempAvg = ClampS16((int)lroundf((bmsTMin + bmsTMax) * 5.0f));
@@ -129,44 +214,74 @@ void BydCan::UpdateFrames() {
 
   const uint8_t msg190[8] = {0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-  if (tick2s >= 20) {
-    tick2s = 0;
-    SendFrame(0x110, msg110);
-  }
-  if (tick10s >= 100) {
-    tick10s = 0;
-    SendFrame(0x150, msg150);
-    SendFrame(0x1D0, msg1D0);
-    SendFrame(0x210, msg210);
-  }
-  if (tick60s >= 600) {
-    tick60s = 0;
+  if (cyclic60sPending) {
+    cyclic60sPending = false;
     SendFrame(0x190, msg190);
+    return true;
   }
+
+  if (cyclic10sPending) {
+    switch (cyclic10sIndex) {
+    case 0:
+      SendFrame(0x150, msg150);
+      break;
+    case 1:
+      SendFrame(0x1D0, msg1D0);
+      break;
+    default:
+      SendFrame(0x210, msg210);
+      break;
+    }
+    cyclic10sIndex++;
+    if (cyclic10sIndex >= 3) {
+      cyclic10sPending = false;
+      cyclic10sIndex = 0;
+    }
+    return true;
+  }
+
+  if (cyclic2sPending) {
+    cyclic2sPending = false;
+    SendFrame(0x110, msg110);
+    return true;
+  }
+
+  return false;
 }
 
 void BydCan::Task100Ms() {
   if (!Enabled()) {
-    inverterStartedUp = false;
-    initialDataSent = false;
-    tick2s = 0;
-    tick10s = 0;
-    tick60s = 0;
+    ResetState();
     return;
   }
 
   if (!inverterStartedUp)
     return;
 
-  if (!initialDataSent) {
-    SendInitialData();
-    initialDataSent = true;
-  }
-
   tick2s++;
   tick10s++;
   tick60s++;
-  UpdateFrames();
+
+  if (!initialDataSent)
+    initialSequencePending = true;
+
+  if (tick2s >= 20) {
+    tick2s = 0;
+    cyclic2sPending = true;
+  }
+  if (tick10s >= 100) {
+    tick10s = 0;
+    cyclic10sPending = true;
+    cyclic10sIndex = 0;
+  }
+  if (tick60s >= 600) {
+    tick60s = 0;
+    cyclic60sPending = true;
+  }
+
+  if (SendInitialSequenceFrame())
+    return;
+  SendCyclicFrame();
 }
 
 void BydCan::DecodeCAN3(const uCAN_MSG &rxMessage) {
@@ -176,8 +291,11 @@ void BydCan::DecodeCAN3(const uCAN_MSG &rxMessage) {
   switch (rxMessage.frame.id) {
   case 0x151:
     inverterStartedUp = true;
-    if (rxMessage.frame.data0 & 0x01)
-      SendInitialData();
+    if (rxMessage.frame.data0 & 0x01) {
+      initialDataSent = false;
+      initialSequencePending = true;
+      initialSequenceIndex = 0;
+    }
     break;
   case 0x091:
   case 0x0D1:
