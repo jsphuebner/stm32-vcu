@@ -36,6 +36,7 @@
 #include "HVAC/preheater.h"
 #include "anain.h"
 #include "bms/bms.h"
+#include "bms/bydcan.h"
 #include "bms/daisychainbms.h"
 #include "bms/kangoobms.h"
 #include "bms/leafbms.h"
@@ -203,6 +204,7 @@ static LeafBMS BMSleaf;
 static DaisychainBMS BMSdaisychain;
 static KangooBMS BMSRenaultKangoo33;
 static STWmBMS stwBms;
+static BydCan bydCan;
 static DCDC DCDCnone;
 static TeslaDCDC DCDCTesla;
 static ElconDCDC ElconDC;
@@ -409,6 +411,7 @@ static void Ms100Task(void) {
   selectedDCDC->Task100Ms();
   selectedShifter->Task100Ms();
   selectedHeater->Task100Ms();
+  bydCan.Task100Ms();
   canMap->SendAll();
   canSdo->TriggerTimeout(100);
 
@@ -1447,6 +1450,8 @@ extern "C" void exti15_10_isr(void) // CAN3 MCP25625 interruppt
   exti_reset_request(EXTI15); // clear irq
   if ((rxMessage.frame.id == 0x108) || (rxMessage.frame.id == 0x109))
     selectedChargeInt->DecodeCAN(rxMessage.frame.id, canData);
+  selectedBMS->DecodeCAN(rxMessage.frame.id, (uint8_t *)canData);
+  bydCan.DecodeCAN3(rxMessage);
 }
 
 extern "C" void rtc_isr(void) {

@@ -26,7 +26,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-// Next param id (increase when adding new parameter!): 157
+// Next param id (increase when adding new parameter!): 163
 /*              category     name         unit       min     max     default id
  */
 #define PARAM_LIST                                                             \
@@ -53,6 +53,7 @@
   PARAM_ENTRY(CAT_SETUP, ConfigCANOI, ONOFF, 0, 1, 0, 149)                     \
   PARAM_ENTRY(CAT_SETUP, UseRS232, ONOFF, 0, 1, 0, 155)                        \
   PARAM_ENTRY(CAT_SETUP, DriveInhibit, DRIVEINHIBITMODES, 0, 1, 0, 156)        \
+  PARAM_ENTRY(CAT_SETUP, BydCanEnable, ONOFF, 0, 1, 0, 162)                     \
   PARAM_ENTRY(CAT_THROTTLE, potmin, "dig", 0, 4095, 0, 7)                      \
   PARAM_ENTRY(CAT_THROTTLE, potmax, "dig", 0, 4095, 4095, 8)                   \
   PARAM_ENTRY(CAT_THROTTLE, pot2min, "dig", 0, 4095, 4095, 9)                  \
